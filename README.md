@@ -1,2 +1,9 @@
-# Main Fkn Branch Lets GOOOOO
-Lets get this bread 
+# Walter
+
+## Logs
+
+### 3 Mar
+  * Reorganize code into sections
+  * Connected + display gyroscope readings
+
+
