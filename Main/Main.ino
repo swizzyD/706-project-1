@@ -47,7 +47,7 @@ const byte right_front = 51;
 const int TRIG_PIN = 48;
 const int ECHO_PIN = 49;
 
-// Anything over 400 cm (23200 us pulse) is "out of range". 
+// Anything over 400 cm (23200 us pulse) is "out of range".
 // Hint:If you decrease to this the ranging sensor but the timeout is short, you may not need to read up to 4meters.
 const unsigned int MAX_DIST = 23200;
 //--------------------------------------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ void setup(void)
 
 }
 
-void loop(void) 
+void loop(void)
 {
   static STATE machine_state = INITIALISING;
   //Finite-state machine Code
@@ -175,6 +175,9 @@ STATE stopped() {
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
 
+#ifndef NO_READ_GYRO
+    GYRO_reading();
+#endif
 
 #ifndef NO_BATTERY_V_OK
     //500ms timed if statement to check lipo and output speed settings

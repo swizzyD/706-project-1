@@ -1,5 +1,4 @@
 
-//----------------------Motor moments------------------------
 //The Vex Motor Controller 29 use Servo Control signals to determine speed and direction, with 0 degrees meaning neutral https://en.wikipedia.org/wiki/Servo_control
 
 void disable_motors()
@@ -31,11 +30,12 @@ void stop() //Stop
 }
 
 void forward()
-{
-  left_font_motor.writeMicroseconds(1500 + speed_val);
-  left_rear_motor.writeMicroseconds(1500 + speed_val);
-  right_rear_motor.writeMicroseconds(1500 - speed_val);
-  right_font_motor.writeMicroseconds(1500 - speed_val);
+{ 
+  int correction = PI_controller_update(analogRead(A3));
+  left_font_motor.writeMicroseconds(1500 + speed_val + correction);
+  left_rear_motor.writeMicroseconds(1500 + speed_val + correction);
+  right_rear_motor.writeMicroseconds(1500 - speed_val + correction);
+  right_font_motor.writeMicroseconds(1500 - speed_val + correction);
 }
 
 void reverse ()
