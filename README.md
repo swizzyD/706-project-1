@@ -7,4 +7,6 @@
   * Connected + display gyroscope readings
   * Added PI control to drive straight 
 
+### 5 Mar
+  * Tune gyro PI
 

@@ -40,10 +40,11 @@ void forward()
 
 void reverse ()
 {
-  left_font_motor.writeMicroseconds(1500 - speed_val);
-  left_rear_motor.writeMicroseconds(1500 - speed_val);
-  right_rear_motor.writeMicroseconds(1500 + speed_val);
-  right_font_motor.writeMicroseconds(1500 + speed_val);
+  int correction = PI_controller_update(analogRead(A3));
+  left_font_motor.writeMicroseconds(1500 - speed_val + correction);
+  left_rear_motor.writeMicroseconds(1500 - speed_val + correction);
+  right_rear_motor.writeMicroseconds(1500 + speed_val + correction);
+  right_font_motor.writeMicroseconds(1500 + speed_val + correction);
 }
 
 void ccw ()

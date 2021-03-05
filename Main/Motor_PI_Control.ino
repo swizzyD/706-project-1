@@ -1,7 +1,7 @@
 
 //--------------PI_controller VARS-------------
-  static float Kp = 0.1f;
-  static float Ki = 0.01;
+  static float Kp = 1.0f;
+  static float Ki = 0.001f;
   static int limMin = -500;
   static int limMax = 500;
   static int Ts = 20;  //ms
@@ -13,12 +13,7 @@
 
 int PI_controller_update(int gyro){
   int error;
-  if(abs(499-gyro)>2){
-    error = 499 - gyro;
-  }
-  else{
-    error = 0;
-  }
+  error = 499 - gyro;
   float proportional = Kp * error;
   integrator += 0.5f * Ki * Ts * (error + prevError);
 
