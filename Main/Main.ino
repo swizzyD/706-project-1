@@ -53,6 +53,8 @@ const unsigned int MAX_DIST = 23200;
 //--------------------------------------------------------------------------------------------------------------
 
 
+static int gyroSteadyState = 0;
+
 //----------------------Servo Objects---------------------------------------------------------------------------
 Servo left_font_motor;  // create servo object to control Vex Motor Controller 29
 Servo left_rear_motor;  // create servo object to control Vex Motor Controller 29
@@ -61,7 +63,7 @@ Servo right_font_motor;  // create servo object to control Vex Motor Controller 
 Servo turret_motor;
 //-----------------------------------------------------------------------------------------------------------
 
-int speed_val = 100;
+int speed_val = 0;
 int speed_change;
 
 //Serial Pointer

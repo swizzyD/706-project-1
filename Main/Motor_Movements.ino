@@ -1,6 +1,8 @@
 
 //The Vex Motor Controller 29 use Servo Control signals to determine speed and direction, with 0 degrees meaning neutral https://en.wikipedia.org/wiki/Servo_control
 
+static double Tr = 0; //ramp time ms
+
 void disable_motors()
 {
   left_font_motor.detach();  // detach the servo on pin left_front to turn Vex Motor Controller 29 Off
@@ -32,19 +34,21 @@ void stop() //Stop
 void forward()
 { 
   int correction = PI_controller_update(analogRead(A3));
-  left_font_motor.writeMicroseconds(1500 + speed_val + correction);
-  left_rear_motor.writeMicroseconds(1500 + speed_val + correction);
-  right_rear_motor.writeMicroseconds(1500 - speed_val + correction);
-  right_font_motor.writeMicroseconds(1500 - speed_val + correction);
+  int rampOut = ramp(speed_val,Tr);
+  left_font_motor.writeMicroseconds(1500 + rampOut + correction);
+  left_rear_motor.writeMicroseconds(1500 + rampOut + correction);
+  right_rear_motor.writeMicroseconds(1500 - rampOut + correction);
+  right_font_motor.writeMicroseconds(1500 - rampOut + correction);
 }
 
 void reverse ()
 {
   int correction = PI_controller_update(analogRead(A3));
-  left_font_motor.writeMicroseconds(1500 - speed_val + correction);
-  left_rear_motor.writeMicroseconds(1500 - speed_val + correction);
-  right_rear_motor.writeMicroseconds(1500 + speed_val + correction);
-  right_font_motor.writeMicroseconds(1500 + speed_val + correction);
+  int rampOut = ramp(speed_val,Tr);
+  left_font_motor.writeMicroseconds(1500 - rampOut + correction);
+  left_rear_motor.writeMicroseconds(1500 - rampOut + correction);
+  right_rear_motor.writeMicroseconds(1500 + rampOut + correction);
+  right_font_motor.writeMicroseconds(1500 + rampOut + correction);
 }
 
 void ccw ()
@@ -81,7 +85,8 @@ void strafe_right ()
 
 void speed_change_smooth()
 {
-  speed_val += speed_change;
+    speed_val += speed_change;
+
   if (speed_val > 1000)
     speed_val = 1000;
   speed_change = 0;

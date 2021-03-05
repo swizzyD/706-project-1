@@ -1,10 +1,11 @@
 
 //--------------PI_controller VARS-------------
   static float Kp = 1.0f;
-  static float Ki = 0.001f;
+  static float Ki = 0.01f;
   static int limMin = -500;
   static int limMax = 500;
-  static int Ts = 20;  //ms
+  static int Ts = 20;  //sampling time ms
+
   static float integrator = 0.0f;
   static float prevError = 0.0f;
   static int out = 0;
@@ -13,7 +14,12 @@
 
 int PI_controller_update(int gyro){
   int error;
-  error = 499 - gyro;
+  if(abs(gyroSteadyState - gyro) > 1){
+    error = gyroSteadyState - gyro;
+  }
+  else{
+    error = 0;
+  }
   float proportional = Kp * error;
   integrator += 0.5f * Ki * Ts * (error + prevError);
 
@@ -61,4 +67,15 @@ int PI_controller_update(int gyro){
   SerialCom->println(analogRead(A3));
   return out;
   
+}
+
+
+int ramp(int val, double t){
+  if(millis() - t < 2000){
+    out = val * (millis() - t)/2000;
+  }
+  else{
+    out = val;
+  }
+  return out;
 }
