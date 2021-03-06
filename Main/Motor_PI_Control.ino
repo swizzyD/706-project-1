@@ -14,8 +14,8 @@
   static int Ts = 20;  //sampling time ms
 
 //--------------Side distance PI_controller VARS-------------
-  static float side_Kp = 20.0f;
-  static float side_Ki = 0.01f;
+  static float side_Kp = 6.0f;
+  static float side_Ki = 0.005f;
   static int side_limMin = -250;
   static int side_limMax = 250;
   static float side_integrator = 0.0f;
@@ -26,12 +26,9 @@
 
 int gyro_PI_controller_update(int gyro){
   int error;
-  if(abs(gyroSteadyState - gyro) > 1){
+
     error = gyroSteadyState - gyro;
-  }
-  else{
-    error = 0;
-  }
+
   float proportional = gyro_Kp * error;
   gyro_integrator += 0.5f * gyro_Ki * Ts * (error + gyro_prevError);
 
@@ -85,12 +82,9 @@ int gyro_PI_controller_update(int gyro){
 
 int side_PI_controller_update(int side){
   int error;
-  if(abs(sideSteadyState - side) > 1){
+
     error = sideSteadyState - side;
-  }
-  else{
-    error = 0;
-  }
+
   float proportional = side_Kp * error;
   side_integrator += 0.5f * side_Ki * Ts * (error + side_prevError);
 

@@ -20,7 +20,6 @@
   Author: Logan Stuart
 */
 #include <Servo.h>  //Need for Servo pulse output
-#include "PID_class.h"
 
 //#define NO_READ_GYRO  //Uncomment if GYRO is not attached.
 #define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
@@ -55,7 +54,6 @@ const int ECHO_PIN = 49;
 const unsigned int MAX_DIST = 23200;
 //--------------------------------------------------------------------------------------------------------------
 
-
 static int gyroSteadyState = 0;
 static int sideSteadyState = 0;
 
@@ -89,8 +87,7 @@ void setup(void)
   SerialCom->println("MECHENG706_Base_Code_25/01/2018");
   SerialCom->println("Setup....");
   SerialCom->println("PID init....");
-  PID gyro_PID(1.0f, 0.01f, 0.0f, -250, 250);
-  PID side_PID(20.0f, 0.01f, 0.0f, -250, 250);
+
 
   delay(1000); //settling time but no really needed
 
