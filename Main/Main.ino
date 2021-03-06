@@ -20,10 +20,13 @@
   Author: Logan Stuart
 */
 #include <Servo.h>  //Need for Servo pulse output
+#include "PID_class.h"
 
 //#define NO_READ_GYRO  //Uncomment if GYRO is not attached.
 #define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
+#define DEBUG 1
+#define SAMPLING_TIME 20 //ms , operate at 50Hz
 
 
 //State machine states
@@ -54,6 +57,7 @@ const unsigned int MAX_DIST = 23200;
 
 
 static int gyroSteadyState = 0;
+static int sideSteadyState = 0;
 
 //----------------------Servo Objects---------------------------------------------------------------------------
 Servo left_font_motor;  // create servo object to control Vex Motor Controller 29
@@ -83,8 +87,10 @@ void setup(void)
   SerialCom = &Serial;
   SerialCom->begin(115200);
   SerialCom->println("MECHENG706_Base_Code_25/01/2018");
-  delay(1000);
   SerialCom->println("Setup....");
+  SerialCom->println("PID init....");
+  PID gyro_PID(1.0f, 0.01f, 0.0f, -250, 250);
+  PID side_PID(20.0f, 0.01f, 0.0f, -250, 250);
 
   delay(1000); //settling time but no really needed
 
@@ -126,8 +132,10 @@ STATE running() {
 
   static unsigned long previous_millis;
 
-  read_serial_command();
-  fast_flash_double_LED_builtin();
+  if(millis() - previous_millis > SAMPLING_TIME){
+    read_serial_command();
+    fast_flash_double_LED_builtin();
+  }
 
   if (millis() - previous_millis > 500) {  //Arduino style 500ms timed execution statement
     previous_millis = millis();
@@ -180,6 +188,7 @@ STATE stopped() {
 #ifndef NO_READ_GYRO
     GYRO_reading();
 #endif
+    Analog_Range_A4();
 
 #ifndef NO_BATTERY_V_OK
     //500ms timed if statement to check lipo and output speed settings

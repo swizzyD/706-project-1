@@ -36,6 +36,7 @@ void read_serial_command()
     val = SerialCom->read();
     Tr = millis();
     gyroSteadyState = analogRead(A3);
+    sideSteadyState = analogRead(A4);
   }
   else{
     val = prevVal;

@@ -33,22 +33,24 @@ void stop() //Stop
 
 void forward()
 { 
-  int correction = PI_controller_update(analogRead(A3));
+  int gyro_correction = gyro_PI_controller_update(analogRead(A3));
+  int side_correction = side_PI_controller_update(analogRead(A4));
   int rampOut = ramp(speed_val,Tr);
-  left_font_motor.writeMicroseconds(1500 + rampOut + correction);
-  left_rear_motor.writeMicroseconds(1500 + rampOut + correction);
-  right_rear_motor.writeMicroseconds(1500 - rampOut + correction);
-  right_font_motor.writeMicroseconds(1500 - rampOut + correction);
+  left_font_motor.writeMicroseconds(1500 + rampOut + gyro_correction + side_correction);
+  left_rear_motor.writeMicroseconds(1500 + rampOut + gyro_correction - side_correction);
+  right_rear_motor.writeMicroseconds(1500 - rampOut + gyro_correction - side_correction);
+  right_font_motor.writeMicroseconds(1500 - rampOut + gyro_correction + side_correction);
 }
 
 void reverse ()
 {
-  int correction = PI_controller_update(analogRead(A3));
+  int gyro_correction = gyro_PI_controller_update(analogRead(A3));
+  int side_correction = side_PI_controller_update(analogRead(A4));
   int rampOut = ramp(speed_val,Tr);
-  left_font_motor.writeMicroseconds(1500 - rampOut + correction);
-  left_rear_motor.writeMicroseconds(1500 - rampOut + correction);
-  right_rear_motor.writeMicroseconds(1500 + rampOut + correction);
-  right_font_motor.writeMicroseconds(1500 + rampOut + correction);
+  left_font_motor.writeMicroseconds(1500 - rampOut + gyro_correction + side_correction);
+  left_rear_motor.writeMicroseconds(1500 - rampOut + gyro_correction - side_correction);
+  right_rear_motor.writeMicroseconds(1500 + rampOut + gyro_correction - side_correction);
+  right_font_motor.writeMicroseconds(1500 + rampOut + gyro_correction + side_correction);
 }
 
 void ccw ()

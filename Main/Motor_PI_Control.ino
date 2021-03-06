@@ -1,18 +1,30 @@
 
-//--------------PI_controller VARS-------------
-  static float Kp = 1.0f;
-  static float Ki = 0.01f;
-  static int limMin = -500;
-  static int limMax = 500;
+//--------------Gyro PI_controller VARS-------------
+  static float gyro_Kp = 1.0f;
+  static float gyro_Ki = 0.01f;
+  static int gyro_limMin = -250;
+  static int gyro_limMax = 250;
+
+
+  static float gyro_integrator = 0.0f;
+  static float gyro_prevError = 0.0f;
+  static int gyro_out = 0;
+//--------------------------------------------------
+
   static int Ts = 20;  //sampling time ms
 
-  static float integrator = 0.0f;
-  static float prevError = 0.0f;
-  static int out = 0;
+//--------------Side distance PI_controller VARS-------------
+  static float side_Kp = 20.0f;
+  static float side_Ki = 0.01f;
+  static int side_limMin = -250;
+  static int side_limMax = 250;
+  static float side_integrator = 0.0f;
+  static float side_prevError = 0.0f;
+  static int side_out = 0;
 //--------------------------------------------------
 
 
-int PI_controller_update(int gyro){
+int gyro_PI_controller_update(int gyro){
   int error;
   if(abs(gyroSteadyState - gyro) > 1){
     error = gyroSteadyState - gyro;
@@ -20,62 +32,122 @@ int PI_controller_update(int gyro){
   else{
     error = 0;
   }
-  float proportional = Kp * error;
-  integrator += 0.5f * Ki * Ts * (error + prevError);
+  float proportional = gyro_Kp * error;
+  gyro_integrator += 0.5f * gyro_Ki * Ts * (error + gyro_prevError);
 
   //integrator dynamic clamp
   float limMaxIntegrator, limMinIntegrator;
 
-  if(limMax > proportional){
-    limMaxIntegrator = limMax - proportional;
+  if(gyro_limMax > proportional){
+    limMaxIntegrator = gyro_limMax - proportional;
   }
   else{
     limMaxIntegrator = 0.0f;
   }
 
-  if(limMin < proportional){
-    limMinIntegrator = limMin - proportional;
+  if(gyro_limMin < proportional){
+    limMinIntegrator = gyro_limMin - proportional;
   }
   else{
     limMinIntegrator = 0.0f;
   }
 
   //clamp integrator
-  if(integrator > limMaxIntegrator){
-    integrator = limMaxIntegrator;
+  if(gyro_integrator > limMaxIntegrator){
+    gyro_integrator = limMaxIntegrator;
   }
-  if(integrator < limMinIntegrator){
-    integrator = limMinIntegrator;
+  if(gyro_integrator < limMinIntegrator){
+    gyro_integrator = limMinIntegrator;
   }
 
-  out = proportional + integrator;
+  gyro_out = proportional + gyro_integrator;
   
   //clamp output
-  if(out > limMax){
-    out = limMax;
+  if(gyro_out > gyro_limMax){
+    gyro_out = gyro_limMax;
   }
-  if(proportional + integrator < limMin){
-    out = limMin;
+  if(proportional + gyro_integrator < gyro_limMin){
+    gyro_out = gyro_limMin;
   }
 
-  prevError = error;
+  gyro_prevError = error;
 
   
-  SerialCom->print("controller output = ");
-  SerialCom->println(out);
+  SerialCom->print("gyro controller output = ");
+  SerialCom->println(gyro_out);
   SerialCom->print("gyro output = ");
   SerialCom->println(analogRead(A3));
-  return out;
+  return gyro_out;
+  
+}
+
+
+
+int side_PI_controller_update(int side){
+  int error;
+  if(abs(sideSteadyState - side) > 1){
+    error = sideSteadyState - side;
+  }
+  else{
+    error = 0;
+  }
+  float proportional = side_Kp * error;
+  side_integrator += 0.5f * side_Ki * Ts * (error + side_prevError);
+
+  //integrator dynamic clamp
+  float limMaxIntegrator, limMinIntegrator;
+
+  if(side_limMax > proportional){
+    limMaxIntegrator = side_limMax - proportional;
+  }
+  else{
+    limMaxIntegrator = 0.0f;
+  }
+
+  if(side_limMin < proportional){
+    limMinIntegrator = side_limMin - proportional;
+  }
+  else{
+    limMinIntegrator = 0.0f;
+  }
+
+  //clamp integrator
+  if(side_integrator > limMaxIntegrator){
+    side_integrator = limMaxIntegrator;
+  }
+  if(side_integrator < limMinIntegrator){
+    side_integrator = limMinIntegrator;
+  }
+
+  side_out = proportional + side_integrator;
+  
+  //clamp output
+  if(side_out > side_limMax){
+    side_out = side_limMax;
+  }
+  if(proportional + side_integrator < side_limMin){
+    side_out = side_limMin;
+  }
+
+  side_prevError = error;
+
+  
+  SerialCom->print("side controller output = ");
+  SerialCom->println(side_out);
+  SerialCom->print("side output = ");
+  SerialCom->println(analogRead(A4));
+  return side_out;
   
 }
 
 
 int ramp(int val, double t){
+  int ramp_out;
   if(millis() - t < 2000){
-    out = val * (millis() - t)/2000;
+    ramp_out = val * (millis() - t)/2000;
   }
   else{
-    out = val;
+    ramp_out = val;
   }
-  return out;
+  return ramp_out;
 }
