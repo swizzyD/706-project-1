@@ -19,12 +19,14 @@
 #define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
 #define GYRO_READING analogRead(A3)
-#define SIDE_READING analogRead(A4)
+#define SIDE_1_READING analogRead(A4)
+#define SIDE_2_READING analogRead(A6)
 #define FRONT_READING analogRead(A5)
 
 //-------------------------------PID OBJECTS---------------------------------
 PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  // Kp, Ki, Kd, limMin, limMax
-PID side_PID(5.0f, 0.005f, 0.0f, -200, 200);  // Kp, Ki, Kd, limMin, limMax
+PID side_distance_PID(5.0f, 0.005f, 0.0f, -200, 200);
+PID side_orientation_PID(5.0f, 0.005f, 0.0f, -200, 200);
 PID front_PID(1.0f, 0.0f, 0.0f, -100, 100);   // Kp, Ki, Kd, limMin, limMax
 //------------------------------------------------------------------------------
 

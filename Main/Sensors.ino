@@ -61,8 +61,10 @@ void HC_SR04_range()
 
 void side_reading()
 {
-  SerialCom->print("side reading:");
-  SerialCom->println(SIDE_READING);
+  SerialCom->print("side 1_reading:");
+  SerialCom->println(SIDE_1_READING);
+  SerialCom->print("side 2_reading:");
+  SerialCom->println(SIDE_2_READING);
 }
 
 void front_reading()
@@ -79,6 +81,6 @@ void gyro_reading()
 
 void update_sensor_targets(){
     gyroTarget = GYRO_READING;    //temporary need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    sideTarget = SIDE_READING;    //temporary  need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    sideTarget = SIDE_1_READING;    //temporary  need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     frontTarget = 300;            //temporary  need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }

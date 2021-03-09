@@ -33,33 +33,26 @@ void stop() //Stop
 
 bool forward()
 {
-
-  int gyro_correction = gyro_PID.PID_update(gyroTarget, GYRO_READING); // target, measurement
-  int side_correction = side_PID.PID_update(sideTarget, SIDE_READING); // target, measuremet
+  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
+  int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
   int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
   
 #if DISP_READINGS
-  SerialCom->print("gyro controller output = ");
-  SerialCom->println(gyro_correction);
-  SerialCom->print("gyro reading = ");
-  SerialCom->println(GYRO_READING);
+  SerialCom->print("side difference = ");
+  SerialCom->println(SIDE_1_READING - SIDE_2_READING);
   SerialCom->print("side controller output = ");
-  SerialCom->println(side_correction);
-  SerialCom->print("side reading = ");
-  SerialCom->println(SIDE_READING);
-  SerialCom->print("front controller output = ");
-  SerialCom->println(speed_val);
-  SerialCom->print("side reading = ");
+  SerialCom->println(side_orientation_correction);
+  SerialCom->print("front reading = ");
   SerialCom->println(FRONT_READING);
 #endif
 
   int rampOut = ramp(speed_val, Tr);
-  left_font_motor.writeMicroseconds(1500 + rampOut + gyro_correction + side_correction);
-  left_rear_motor.writeMicroseconds(1500 + rampOut + gyro_correction - side_correction);
-  right_rear_motor.writeMicroseconds(1500 - rampOut + gyro_correction - side_correction);
-  right_font_motor.writeMicroseconds(1500 - rampOut + gyro_correction + side_correction);
+  left_font_motor.writeMicroseconds(1500 + rampOut - side_orientation_correction - side_distance_correction);
+  left_rear_motor.writeMicroseconds(1500 + rampOut - side_orientation_correction + side_distance_correction);
+  right_rear_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction + side_distance_correction);
+  right_font_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction - side_distance_correction);
 
-  if(abs(gyroTarget - GYRO_READING) < 5 && abs(sideTarget - SIDE_READING) < 5 && abs(frontTarget - FRONT_READING) < 5){
+  if(abs(gyroTarget - GYRO_READING) < 5 && abs(sideTarget - SIDE_1_READING) < 5 && abs(frontTarget - FRONT_READING) < 5){
     return true;  // movement complete
   }
   else{
@@ -69,30 +62,24 @@ bool forward()
 
 void reverse ()
 {
-  int gyro_correction = gyro_PID.PID_update(gyroTarget, GYRO_READING); // target, measurement
-  int side_correction = side_PID.PID_update(sideTarget, SIDE_READING); // target, measurement
-  int speed_val = front_PID.PID_update(frontTarget, FRONT_READING); 
+  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
+  int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
+  int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
   int rampOut = ramp(speed_val, Tr);
-
-  left_font_motor.writeMicroseconds(1500 - rampOut + gyro_correction + side_correction);
-  left_rear_motor.writeMicroseconds(1500 - rampOut + gyro_correction - side_correction);
-  right_rear_motor.writeMicroseconds(1500 + rampOut + gyro_correction - side_correction);
-  right_font_motor.writeMicroseconds(1500 + rampOut + gyro_correction + side_correction);
-
 #if DISP_READINGS
-  SerialCom->print("gyro controller output = ");
-  SerialCom->println(gyro_correction);
-  SerialCom->print("gyro reading = ");
-  SerialCom->println(GYRO_READING);
+  SerialCom->print("side difference = ");
+  SerialCom->println(SIDE_1_READING - SIDE_2_READING);
   SerialCom->print("side controller output = ");
-  SerialCom->println(side_correction);
-  SerialCom->print("side reading = ");
-  SerialCom->println(SIDE_READING);
-  SerialCom->print("front controller output = ");
-  SerialCom->println(speed_val);
-  SerialCom->print("side reading = ");
+  SerialCom->println(side_orientation_correction);
+  SerialCom->print("front reading = ");
   SerialCom->println(FRONT_READING);
 #endif
+
+  left_font_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction - side_distance_correction);
+  left_rear_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction + side_distance_correction);
+  right_rear_motor.writeMicroseconds(1500 + rampOut - side_orientation_correction + side_distance_correction);
+  right_font_motor.writeMicroseconds(1500 + rampOut - side_orientation_correction - side_distance_correction);
+
 }
 
 void ccw ()
