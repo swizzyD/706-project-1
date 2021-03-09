@@ -29,14 +29,15 @@ void slow_flash_LED_builtin()
   }
 }
 
+/*
 //Serial command pasing
 void read_serial_command()
 {
   if (SerialCom->available()) {
     val = SerialCom->read();
     Tr = millis();
-    gyroSteadyState = analogRead(A3);
-    sideSteadyState = analogRead(A4);
+    gyroSteadyState = GYRO_READING;
+    sideSteadyState = SIDE_READING;
   }
   else{
     val = prevVal;
@@ -90,11 +91,11 @@ void read_serial_command()
     }
   prevVal = val;
 }
+*/
 
 
 
 
-#ifndef NO_BATTERY_V_OK
 boolean is_battery_voltage_OK()
 {
   static byte Low_voltage_counter;
@@ -139,5 +140,3 @@ boolean is_battery_voltage_OK()
       return true;
   }
 }
-
-#endif

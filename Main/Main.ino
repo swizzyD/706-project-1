@@ -1,8 +1,4 @@
 /*
-  MechEng 706 Base Code
-
-  This code provides basic movement and sensor reading for the MechEng 706 Mecanum Wheel Robot Project
-
   Hardware:
     Arduino Mega2560 https://www.arduino.cc/en/Guide/ArduinoMega2560
     MPU-9250 https://www.sparkfun.com/products/13762
@@ -13,20 +9,24 @@
     Vex Motor Controller 29 https://www.vexrobotics.com/276-2193.html
     Vex Motors https://www.vexrobotics.com/motors.html
     Turnigy nano-tech 2200mah 2S https://hobbyking.com/en_us/turnigy-nano-tech-2200mah-2s-25-50c-lipo-pack.html
-
-  Date: 11/11/2016
-  Author: Logan Stuart
-  Modified: 15/02/2018
-  Author: Logan Stuart
 */
-#include <Servo.h>  //Need for Servo pulse output
 
-//#define NO_READ_GYRO  //Uncomment if GYRO is not attached.
+#include <Servo.h>  //Need for Servo pulse output
+#include "PID_class.h"
+
 #define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
-#define DEBUG 1
+#define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
+#define GYRO_READING analogRead(A3)
+#define SIDE_READING analogRead(A4)
+#define FRONT_READING analogRead(A5)
 
+//-------------------------------PID OBJECTS---------------------------------
+PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  // Kp, Ki, Kd, limMin, limMax
+PID side_PID(5.0f, 0.005f, 0.0f, -200, 200);  // Kp, Ki, Kd, limMin, limMax
+PID front_PID(1.0f, 0.0f, 0.0f, -100, 100);   // Kp, Ki, Kd, limMin, limMax
+//------------------------------------------------------------------------------
 
 //State machine states
 enum STATE {
@@ -34,8 +34,6 @@ enum STATE {
   RUNNING,
   STOPPED
 };
-
-//Refer to Shield Pinouts.jpg for pin locations
 
 //-----------------Default motor control pins--------------
 const byte left_front = 46;
@@ -54,9 +52,6 @@ const int ECHO_PIN = 49;
 const unsigned int MAX_DIST = 23200;
 //--------------------------------------------------------------------------------------------------------------
 
-static int gyroSteadyState = 0;
-static int sideSteadyState = 0;
-
 //----------------------Servo Objects---------------------------------------------------------------------------
 Servo left_font_motor;  // create servo object to control Vex Motor Controller 29
 Servo left_rear_motor;  // create servo object to control Vex Motor Controller 29
@@ -65,8 +60,10 @@ Servo right_font_motor;  // create servo object to control Vex Motor Controller 
 Servo turret_motor;
 //-----------------------------------------------------------------------------------------------------------
 
-int speed_val = 0;
-int speed_change;
+static int gyroTarget = 0;
+static int sideTarget = 0;
+static int frontTarget = 0;
+static int movement_state = 1;
 
 //Serial Pointer
 HardwareSerial *SerialCom;
@@ -122,32 +119,41 @@ STATE initialising() {
   SerialCom->println("Enabling Motors...");
   enable_motors();
   SerialCom->println("RUNNING STATE...");
+  update_sensor_targets();    //temporary!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   return RUNNING;
 }
 
 STATE running() {
 
-  static unsigned long previous_millis;
+  static unsigned long previous_millis_1;
+  static unsigned long previous_millis_2;
 
-  if(millis() - previous_millis > SAMPLING_TIME){
-    read_serial_command();
-    fast_flash_double_LED_builtin();
+  bool movement_complete = false;
+
+  fast_flash_double_LED_builtin();
+
+  if (millis() - previous_millis_1 > SAMPLING_TIME) {    //movement state machine
+    previous_millis_1 = millis();
+    if (movement_state == 0) {
+      stop();
+      return STOPPED;
+    }
+    else if (movement_state == 1) {
+      movement_complete = forward();
+      if (movement_complete) {
+        movement_state = 0;
+      }
+      else {
+        movement_state = 1;
+      }
+    }
+
+
   }
 
-  if (millis() - previous_millis > 500) {  //Arduino style 500ms timed execution statement
-    previous_millis = millis();
-
+  if (millis() - previous_millis_2 > 500) {  //Arduino style 500ms timed execution statement
+    previous_millis_2 = millis();
     SerialCom->println("RUNNING---------");
-    speed_change_smooth();
-    Analog_Range_A4();
-
-#ifndef NO_READ_GYRO
-    GYRO_reading();
-#endif
-
-#ifndef NO_HC-SR04
-    HC_SR04_range();
-#endif
 
 #ifndef NO_BATTERY_V_OK
     if (!is_battery_voltage_OK()) return STOPPED;
@@ -155,7 +161,6 @@ STATE running() {
 
 
     turret_motor.write(pos);
-
     if (pos == 0)
     {
       pos = 45;
@@ -182,10 +187,11 @@ STATE stopped() {
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
 
-#ifndef NO_READ_GYRO
-    GYRO_reading();
-#endif
-    Analog_Range_A4();
+
+    gyro_reading();
+    side_reading();
+    front_reading();
+
 
 #ifndef NO_BATTERY_V_OK
     //500ms timed if statement to check lipo and output speed settings

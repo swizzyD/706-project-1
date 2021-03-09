@@ -1,6 +1,8 @@
 
+
 class PID{
   private:
+  String sensor;
   float Kp, Ki, Kd;
   int limMin, limMax;
   int integrator, prevError, differentiator, prevMeasurement;
@@ -82,12 +84,7 @@ int PID::PID_update(int target, int measurement){
   prevError = error;
   prevMeasurement = measurement;
 
-  #if DEBUG
-  SerialCom->print("controller output = ");
-  SerialCom->println(out);
-  SerialCom->print("measurement = ");
-  SerialCom->println(measurement);
-  #endif
+
   
   return out;
 

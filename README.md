@@ -16,4 +16,10 @@
   * Added side distance sensor PI
   * Reform failed - try again later
 
+## 9 Mar
+  * PID class in use
+  * ditched serial command for movements. instead using state machine to update movements
+  * Added code for front sensor, sensor not connected
+
+
 

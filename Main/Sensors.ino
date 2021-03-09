@@ -59,17 +59,26 @@ void HC_SR04_range()
 #endif
 
 
-void Analog_Range_A4()
+void side_reading()
 {
-  SerialCom->print("Analog Range A4:");
-  SerialCom->println(analogRead(A4));
+  SerialCom->print("side reading:");
+  SerialCom->println(SIDE_READING);
 }
 
-
-#ifndef NO_READ_GYRO
-void GYRO_reading()
+void front_reading()
 {
-  SerialCom->print("GYRO A3:");
-  SerialCom->println(analogRead(A3));
+  SerialCom->print("front reading:");
+  SerialCom->println(FRONT_READING);
 }
-#endif
+
+void gyro_reading()
+{
+  SerialCom->print("gyro reading:");
+  SerialCom->println(GYRO_READING);
+}
+
+void update_sensor_targets(){
+    gyroTarget = GYRO_READING;    //temporary need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    sideTarget = SIDE_READING;    //temporary  need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    frontTarget = 300;            //temporary  need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+}
