@@ -14,7 +14,7 @@
 #include <Servo.h>  //Need for Servo pulse output
 #include "PID_class.h"
 
-#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
+//#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 #define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
@@ -26,7 +26,7 @@
 //-------------------------------PID OBJECTS---------------------------------
 PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  // Kp, Ki, Kd, limMin, limMax
 PID side_distance_PID(5.0f, 0.005f, 0.0f, -200, 200);
-PID side_orientation_PID(5.0f, 0.005f, 0.0f, -200, 200);
+PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
 PID front_PID(1.0f, 0.0f, 0.0f, -100, 100);   // Kp, Ki, Kd, limMin, limMax
 //------------------------------------------------------------------------------
 
@@ -193,6 +193,7 @@ STATE stopped() {
     gyro_reading();
     side_reading();
     front_reading();
+    HC_SR04_range();
 
 
 #ifndef NO_BATTERY_V_OK

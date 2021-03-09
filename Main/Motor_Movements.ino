@@ -33,10 +33,10 @@ void stop() //Stop
 
 bool forward()
 {
-  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
+  int side_distance_correction = side_distance_PID.PID_update(335, SIDE_1_READING); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
-  int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
-  
+  //int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
+  int speed_val = 100;
 #if DISP_READINGS
   SerialCom->print("side difference = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
@@ -62,7 +62,7 @@ bool forward()
 
 void reverse ()
 {
-  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
+  int side_distance_correction = side_distance_PID.PID_update(335, SIDE_1_READING); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
   int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
   int rampOut = ramp(speed_val, Tr);
