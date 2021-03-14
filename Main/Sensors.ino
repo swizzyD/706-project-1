@@ -1,12 +1,11 @@
 
-#ifndef NO_HC-SR04
-void HC_SR04_range()
+
+int get_ultrasonic_range()
 {
   unsigned long t1;
   unsigned long t2;
   unsigned long pulse_width;
   float cm;
-  float inches;
 
   // Hold the trigger pin high for at least 10 us
   digitalWrite(TRIG_PIN, HIGH);
@@ -19,7 +18,7 @@ void HC_SR04_range()
     t2 = micros();
     pulse_width = t2 - t1;
     if ( pulse_width > (MAX_DIST + 1000)) {
-      SerialCom->println("HC-SR04: NOT found");
+      SerialCom->println("Ultrasonic: NOT found");
       return;
     }
   }
@@ -33,30 +32,31 @@ void HC_SR04_range()
     t2 = micros();
     pulse_width = t2 - t1;
     if ( pulse_width > (MAX_DIST + 1000) ) {
-      SerialCom->println("HC-SR04: Out of range");
+      SerialCom->println("Ultrasonic: Out of range");
       return;
     }
   }
 
   t2 = micros();
   pulse_width = t2 - t1;
-
+  return pulse_width;
+/*
   // Calculate distance in centimeters and inches. The constants
   // are found in the datasheet, and calculated from the assumed speed
   //of sound in air at sea level (~340 m/s).
   cm = pulse_width / 58.0;
-  inches = pulse_width / 148.0;
 
   // Print out results
   if ( pulse_width > MAX_DIST ) {
-    SerialCom->println("HC-SR04: Out of range");
+    SerialCom->println("Ultrasonic: Out of range");
   } else {
-    SerialCom->print("HC-SR04:");
+    SerialCom->print("Ultrasonic:");
     SerialCom->print(cm);
     SerialCom->println("cm");
   }
+  */
 }
-#endif
+
 
 
 void side_reading()
@@ -69,8 +69,8 @@ void side_reading()
 
 void front_reading()
 {
-  SerialCom->print("front reading:");
-  SerialCom->println(FRONT_READING);
+  SerialCom->print("ultrasonic reading:");
+  SerialCom->println(get_ultrasonic_range());
 }
 
 void gyro_reading()

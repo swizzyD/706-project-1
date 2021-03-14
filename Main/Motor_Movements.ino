@@ -3,6 +3,7 @@
 
 static double Tr = 0; //ramp time ms
 
+
 void disable_motors()
 {
   left_font_motor.detach();  // detach the servo on pin left_front to turn Vex Motor Controller 29 Off
@@ -35,7 +36,7 @@ bool forward()
 {
   int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
-  int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
+  int speed_val = Ultrasonic_PID.PID_update(frontTarget, get_ultrasonic_range());    
   
 #if DISP_READINGS
   SerialCom->print("side difference = ");
@@ -43,7 +44,7 @@ bool forward()
   SerialCom->print("side controller output = ");
   SerialCom->println(side_orientation_correction);
   SerialCom->print("front reading = ");
-  SerialCom->println(FRONT_READING);
+  SerialCom->println(get_ultrasonic_range());
 #endif
 
   int rampOut = ramp(speed_val, Tr);
@@ -52,7 +53,7 @@ bool forward()
   right_rear_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction + side_distance_correction);
   right_font_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction - side_distance_correction);
 
-  if(abs(gyroTarget - GYRO_READING) < 5 && abs(sideTarget - SIDE_1_READING) < 5 && abs(frontTarget - FRONT_READING) < 5){
+  if(abs(gyroTarget - GYRO_READING) < 5 && abs(sideTarget - SIDE_1_READING) < 5 && abs(frontTarget - get_ultrasonic_range()) < 5){
     return true;  // movement complete
   }
   else{
@@ -62,17 +63,18 @@ bool forward()
 
 void reverse ()
 {
-  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
+  int side_distance_correction = side_distance_PID.PID_update(335, SIDE_1_READING); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
-  int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
+  int speed_val = Ultrasonic_PID.PID_update(frontTarget, get_ultrasonic_range());    
   int rampOut = ramp(speed_val, Tr);
+  
 #if DISP_READINGS
   SerialCom->print("side difference = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
   SerialCom->print("side controller output = ");
   SerialCom->println(side_orientation_correction);
   SerialCom->print("front reading = ");
-  SerialCom->println(FRONT_READING);
+  SerialCom->println(get_ultrasonic_range());
 #endif
 
   left_font_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction - side_distance_correction);
@@ -91,13 +93,15 @@ void ccw ()
   right_font_motor.writeMicroseconds(1500 - speed_val);
 }
 
-void cw ()
+int cw ()
 {
-  int speed_val = 100;  //temporary!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  left_font_motor.writeMicroseconds(1500 + speed_val);
-  left_rear_motor.writeMicroseconds(1500 + speed_val);
-  right_rear_motor.writeMicroseconds(1500 + speed_val);
-  right_font_motor.writeMicroseconds(1500 + speed_val);
+  int angular_displacement = integrator(GYRO_READING - 499);
+  int turning_val = gyro_PID.PID_update(angular_displacement, gyroTarget);
+  left_font_motor.writeMicroseconds(1500 + turning_val);
+  left_rear_motor.writeMicroseconds(1500 + turning_val);
+  right_rear_motor.writeMicroseconds(1500 + turning_val);
+  right_font_motor.writeMicroseconds(1500 + turning_val);
+  return 1;
 }
 
 void strafe_left ()
@@ -129,4 +133,10 @@ int ramp(int val, double t) {
     ramp_out = val;
   }
   return ramp_out;
+}
+
+int integrator(int val){
+  static long integrator = 0;
+  integrator += val;
+  return integrator;
 }
