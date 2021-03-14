@@ -35,9 +35,9 @@ void stop() //Stop
 bool forward()
 {
   int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
-  int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
-  int speed_val = Ultrasonic_PID.PID_update(frontTarget, get_ultrasonic_range());    
-  
+  int side_orientation_correction = side_orientation_PID.PID_update(15, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
+  int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+
 #if DISP_READINGS
   SerialCom->print("side difference = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
@@ -47,16 +47,15 @@ bool forward()
   SerialCom->println(get_ultrasonic_range());
 #endif
 
-  int rampOut = ramp(speed_val, Tr);
-  left_font_motor.writeMicroseconds(1500 + rampOut - side_orientation_correction - side_distance_correction);
-  left_rear_motor.writeMicroseconds(1500 + rampOut - side_orientation_correction + side_distance_correction);
-  right_rear_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction + side_distance_correction);
-  right_font_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction - side_distance_correction);
+  left_font_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction - side_distance_correction);
+  left_rear_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction + side_distance_correction);
+  right_rear_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction + side_distance_correction);
+  right_font_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction - side_distance_correction);
 
-  if(abs(gyroTarget - GYRO_READING) < 5 && abs(sideTarget - SIDE_1_READING) < 5 && abs(frontTarget - get_ultrasonic_range()) < 5){
+  if (abs(SIDE_1_READING - SIDE_2_READING) < 20 && abs(sideTarget - SIDE_1_READING) < 5 && abs(ultrasonicTarget - get_ultrasonic_range()) < 10) {
     return true;  // movement complete
   }
-  else{
+  else {
     return false;  //movement imcomplete
   }
 }
@@ -64,10 +63,9 @@ bool forward()
 void reverse ()
 {
   int side_distance_correction = side_distance_PID.PID_update(335, SIDE_1_READING); // target, measuremet);
-  int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
-  int speed_val = Ultrasonic_PID.PID_update(frontTarget, get_ultrasonic_range());    
-  int rampOut = ramp(speed_val, Tr);
-  
+  int side_orientation_correction = side_orientation_PID.PID_update(15, SIDE_1_READING - SIDE_2_READING);
+  int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+
 #if DISP_READINGS
   SerialCom->print("side difference = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
@@ -77,10 +75,10 @@ void reverse ()
   SerialCom->println(get_ultrasonic_range());
 #endif
 
-  left_font_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction - side_distance_correction);
-  left_rear_motor.writeMicroseconds(1500 - rampOut - side_orientation_correction + side_distance_correction);
-  right_rear_motor.writeMicroseconds(1500 + rampOut - side_orientation_correction + side_distance_correction);
-  right_font_motor.writeMicroseconds(1500 + rampOut - side_orientation_correction - side_distance_correction);
+  left_font_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction - side_distance_correction);
+  left_rear_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction + side_distance_correction);
+  right_rear_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction + side_distance_correction);
+  right_font_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction - side_distance_correction);
 
 }
 
@@ -96,12 +94,18 @@ void ccw ()
 int cw ()
 {
   int angular_displacement = integrator(GYRO_READING - 499);
-  int turning_val = gyro_PID.PID_update(angular_displacement, gyroTarget);
-  left_font_motor.writeMicroseconds(1500 + turning_val);
-  left_rear_motor.writeMicroseconds(1500 + turning_val);
-  right_rear_motor.writeMicroseconds(1500 + turning_val);
-  right_font_motor.writeMicroseconds(1500 + turning_val);
-  return 1;
+  int turning_val = gyro_PID.PID_update(angular_displacement, turnTarget);
+  left_font_motor.writeMicroseconds(1500 - turning_val);
+  left_rear_motor.writeMicroseconds(1500 - turning_val);
+  right_rear_motor.writeMicroseconds(1500 - turning_val);
+  right_font_motor.writeMicroseconds(1500 - turning_val);
+
+  if (abs(angular_displacement - turnTarget) < 100) {
+    return true;
+  }
+  else {
+    return false;
+  }
 }
 
 void strafe_left ()
@@ -122,20 +126,7 @@ void strafe_right ()
   right_font_motor.writeMicroseconds(1500 + speed_val);
 }
 
-
-
-int ramp(int val, double t) {
-  int ramp_out;
-  if (millis() - t < 2000) {
-    ramp_out = val * (millis() - t) / 2000;
-  }
-  else {
-    ramp_out = val;
-  }
-  return ramp_out;
-}
-
-int integrator(int val){
+int integrator(int val) {
   static long integrator = 0;
   integrator += val;
   return integrator;

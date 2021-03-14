@@ -18,8 +18,7 @@ int get_ultrasonic_range()
     t2 = micros();
     pulse_width = t2 - t1;
     if ( pulse_width > (MAX_DIST + 1000)) {
-      SerialCom->println("Ultrasonic: NOT found");
-      return;
+      return 9999;
     }
   }
 
@@ -33,7 +32,7 @@ int get_ultrasonic_range()
     pulse_width = t2 - t1;
     if ( pulse_width > (MAX_DIST + 1000) ) {
       SerialCom->println("Ultrasonic: Out of range");
-      return;
+      return 9999;
     }
   }
 
@@ -67,7 +66,7 @@ void side_reading()
   SerialCom->println(SIDE_2_READING);
 }
 
-void front_reading()
+void ultrasonic_reading()
 {
   SerialCom->print("ultrasonic reading:");
   SerialCom->println(get_ultrasonic_range());
@@ -77,10 +76,4 @@ void gyro_reading()
 {
   SerialCom->print("gyro reading:");
   SerialCom->println(GYRO_READING);
-}
-
-void update_sensor_targets(){
-    gyroTarget = GYRO_READING;    //temporary need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    sideTarget = SIDE_1_READING;    //temporary  need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    frontTarget = 300;            //temporary  need to calibrate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }

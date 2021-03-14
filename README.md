@@ -21,5 +21,8 @@
   * ditched serial command for movements. instead using state machine to update movements
   * Added code for front sensor, sensor not connected
 
-
+## 15 Mar
+  * ultrasonic code implemented
+  * turning function to be improved
+  * all controllers need tuning
 
