@@ -1,6 +1,6 @@
 
 
-void UltraSonic_range()
+int get_ultrasonic_range()
 {
   unsigned long t1;
   unsigned long t2;
@@ -39,7 +39,8 @@ void UltraSonic_range()
 
   t2 = micros();
   pulse_width = t2 - t1;
-
+  return pulse_width;
+/*
   // Calculate distance in centimeters and inches. The constants
   // are found in the datasheet, and calculated from the assumed speed
   //of sound in air at sea level (~340 m/s).
@@ -53,6 +54,7 @@ void UltraSonic_range()
     SerialCom->print(cm);
     SerialCom->println("cm");
   }
+  */
 }
 
 
@@ -67,8 +69,8 @@ void side_reading()
 
 void front_reading()
 {
-  SerialCom->print("front reading:");
-  SerialCom->println(FRONT_READING);
+  SerialCom->print("ultrasonic reading:");
+  SerialCom->println(get_ultrasonic_range());
 }
 
 void gyro_reading()

@@ -20,7 +20,7 @@
 #define GYRO_READING analogRead(A3)
 #define SIDE_1_READING analogRead(A4)
 #define SIDE_2_READING analogRead(A6)
-#define FRONT_READING analogRead(A5)
+
 
 //-------------------------------PID OBJECTS---------------------------------
 PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  // Kp, Ki, Kd, limMin, limMax
@@ -29,7 +29,7 @@ PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
 PID Ultrasonic_PID(1.0f, 0.0f, 0.0f, -200, 200);   // Kp, Ki, Kd, limMin, limMax
 
 static int gyroTarget = 0;
-static int sideTarget = 335;
+static int sideTarget = 347;
 static int frontTarget = 580; // pulse width not cm
 
 //------------------------------------------------------------------------------
@@ -202,7 +202,7 @@ STATE stopped() {
     gyro_reading();
     side_reading();
     front_reading();
-    UltraSonic_range();
+    SerialCom->println(get_ultrasonic_range());
 
 
 #ifndef NO_BATTERY_V_OK
