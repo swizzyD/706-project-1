@@ -3,6 +3,7 @@
 
 static double Tr = 0; //ramp time ms
 
+
 void disable_motors()
 {
   left_font_motor.detach();  // detach the servo on pin left_front to turn Vex Motor Controller 29 Off
@@ -33,10 +34,10 @@ void stop() //Stop
 
 bool forward()
 {
-  int side_distance_correction = side_distance_PID.PID_update(335, SIDE_1_READING); // target, measuremet);
+  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
-  //int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
-  int speed_val = 100;
+  int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
+  
 #if DISP_READINGS
   SerialCom->print("side difference = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
@@ -66,6 +67,7 @@ void reverse ()
   int side_orientation_correction = side_orientation_PID.PID_update(0,SIDE_1_READING - SIDE_2_READING);
   int speed_val = front_PID.PID_update(frontTarget, FRONT_READING);    
   int rampOut = ramp(speed_val, Tr);
+  
 #if DISP_READINGS
   SerialCom->print("side difference = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
@@ -93,7 +95,7 @@ void ccw ()
 
 void cw ()
 {
-  int speed_val = 100;  //temporary!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  int angular_displacement = integrator(GYRO_READING - 499);
   left_font_motor.writeMicroseconds(1500 + speed_val);
   left_rear_motor.writeMicroseconds(1500 + speed_val);
   right_rear_motor.writeMicroseconds(1500 + speed_val);
@@ -129,4 +131,10 @@ int ramp(int val, double t) {
     ramp_out = val;
   }
   return ramp_out;
+}
+
+int integrator(int val){
+  static long integrator = 0;
+  integrator += val;
+  return integrator;
 }
