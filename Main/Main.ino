@@ -1,7 +1,6 @@
 /*
   Hardware:
     Arduino Mega2560 https://www.arduino.cc/en/Guide/ArduinoMega2560
-    MPU-9250 https://www.sparkfun.com/products/13762
     Ultrasonic Sensor - HC-SR04 https://www.sparkfun.com/products/13959
     Infrared Proximity Sensor - Sharp https://www.sparkfun.com/products/242
     Infrared Proximity Sensor Short Range - Sharp https://www.sparkfun.com/products/12728
@@ -14,20 +13,25 @@
 #include <Servo.h>  //Need for Servo pulse output
 #include "PID_class.h"
 
-#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 #define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
 #define GYRO_READING analogRead(A3)
 #define SIDE_1_READING analogRead(A4)
 #define SIDE_2_READING analogRead(A6)
-#define FRONT_READING analogRead(A5)
 
-//-------------------------------PID OBJECTS---------------------------------
-PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  // Kp, Ki, Kd, limMin, limMax
+
+//-------------------------------PID OBJECTS-----//LILINA PLZ TUNE
+// Kp, Ki, Kd, limMin, limMax
+PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  
 PID side_distance_PID(5.0f, 0.005f, 0.0f, -200, 200);
-PID side_orientation_PID(5.0f, 0.005f, 0.0f, -200, 200);
-PID front_PID(1.0f, 0.0f, 0.0f, -100, 100);   // Kp, Ki, Kd, limMin, limMax
+PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
+PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);   
+
+static int turnTarget = 20000;
+static int sideTarget = 347;
+static int ultrasonicTarget = 580; // pulse width not cm
+
 //------------------------------------------------------------------------------
 
 //State machine states
@@ -62,10 +66,6 @@ Servo right_font_motor;  // create servo object to control Vex Motor Controller 
 Servo turret_motor;
 //-----------------------------------------------------------------------------------------------------------
 
-static int gyroTarget = 0;
-static int sideTarget = 0;
-static int frontTarget = 0;
-static int movement_state = 1;
 
 //Serial Pointer
 HardwareSerial *SerialCom;
@@ -95,7 +95,7 @@ void setup(void)
 void loop(void)
 {
   static STATE machine_state = INITIALISING;
-  //Finite-state machine Code
+
   switch (machine_state) {
     case INITIALISING:
       machine_state = initialising();
@@ -112,8 +112,6 @@ void loop(void)
 
 //---------------STATES------------------------------
 
-
-
 STATE initialising() {
   //initialising
   SerialCom->println("INITIALISING....");
@@ -121,7 +119,6 @@ STATE initialising() {
   SerialCom->println("Enabling Motors...");
   enable_motors();
   SerialCom->println("RUNNING STATE...");
-  update_sensor_targets();    //temporary!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   return RUNNING;
 }
 
@@ -129,29 +126,42 @@ STATE running() {
 
   static unsigned long previous_millis_1;
   static unsigned long previous_millis_2;
-
-  bool movement_complete = false;
+  static int movement_state = 1;
+  static bool movement_complete = false;
 
   fast_flash_double_LED_builtin();
 
-  if (millis() - previous_millis_1 > SAMPLING_TIME) {    //movement state machine
+//-----------------MOVEMENT STATE MACHINE---------------------
+  if (millis() - previous_millis_1 > SAMPLING_TIME) {
+    SerialCom ->print("movement state = ");
+    SerialCom->println(movement_state);    
     previous_millis_1 = millis();
     if (movement_state == 0) {
       stop();
       return STOPPED;
     }
     else if (movement_state == 1) {
+      
       movement_complete = forward();
       if (movement_complete) {
-        movement_state = 0;
+        movement_state = 2;
       }
       else {
         movement_state = 1;
       }
     }
 
-
+    else if (movement_state == 2){
+      movement_complete = cw();
+      if(movement_complete){
+        movement_state = 1;
+      }
+      else{
+        movement_state = 2;
+      }
+    }
   }
+
 
   if (millis() - previous_millis_2 > 500) {  //Arduino style 500ms timed execution statement
     previous_millis_2 = millis();
@@ -188,11 +198,10 @@ STATE stopped() {
   if (millis() - previous_millis > 500) { //print massage every 500ms
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
-
-
+    
     gyro_reading();
     side_reading();
-    front_reading();
+    ultrasonic_reading();
 
 
 #ifndef NO_BATTERY_V_OK

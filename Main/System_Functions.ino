@@ -1,8 +1,4 @@
 
-static char prevVal;
-static char val = "p";
-
-
 void fast_flash_double_LED_builtin()
 {
   static byte indexer = 0;
@@ -28,71 +24,6 @@ void slow_flash_LED_builtin()
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
   }
 }
-
-/*
-//Serial command pasing
-void read_serial_command()
-{
-  if (SerialCom->available()) {
-    val = SerialCom->read();
-    Tr = millis();
-    gyroSteadyState = GYRO_READING;
-    sideSteadyState = SIDE_READING;
-  }
-  else{
-    val = prevVal;
-  }
-    //Perform an action depending on the command
-    switch (val) {
-      case 'w'://Move Forward
-      case 'W':
-        forward ();
-        //SerialCom->println("Forward");
-        break;
-      case 'a'://Turn Left
-      case 'A':
-        ccw();
-        //SerialCom->println("ccw");
-        break;
-      case 's'://Move Backwards
-      case 'S':
-        reverse ();
-        //SerialCom->println("Backwards");
-        break;
-      case 'd'://Turn Right
-      case 'D':
-        cw();
-        //SerialCom->println("cw");
-        break;
-      case 'q'://Strafe Left
-      case 'Q':
-        strafe_left();
-        //SerialCom->println("Strafe Left");
-        break;
-      case 'e'://Strafe Right
-      case 'E':
-        strafe_right();
-        //SerialCom->println("Strafe Right");
-        break;
-      case '-'://Speed minus
-      case '_':
-        speed_change = -100;
-        //SerialCom->println("-100");
-        break;
-      case '=': // Speed plus
-      case '+':
-        speed_change = 100;
-        //SerialCom->println("+100");
-        break;
-      default:
-        stop();
-        //SerialCom->println("stop");
-        break;
-    }
-  prevVal = val;
-}
-*/
-
 
 
 
