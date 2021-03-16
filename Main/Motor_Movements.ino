@@ -32,6 +32,53 @@ void stop() //Stop
   right_font_motor.writeMicroseconds(1500);
 }
 
+//Function which align the robot to the 15cm centre line
+//Returns true if the alignment process is completed, else false
+//Sensors are 5.5 cm from centre of robot -> should be 20.5 cm from the wall
+//Ahhhhh idkkkkk if the plus or minus signs are correct or not QAQ
+//Need to recalibrate the side sensors (the back sensor has changed to long range
+bool align()
+{
+  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
+  int side_orientation_correction = side_orientation_PID.PID_update(15, SIDE_1_READING - SIDE_2_READING); //RECALIBRATE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#if DISP_READINGS
+  SerialCom->print("side difference = ");
+  SerialCom->println(SIDE_1_READING - SIDE_2_READING);
+  SerialCom->print("side controller output = ");
+  SerialCom->println(side_orientation_correction);
+#endif
+
+  //The different situations
+
+  static int out_range_value = 10; //////////////////////////////////////CALIBRATE!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+  //incorrect orientation or complete opposite direction meaning both sensor out of range rotate ccw
+  if (SIDE_2_READING < out_range_value) {
+    //robot rotate ccw until at least side sensor 2 (long range) obtains a value
+    left_font_motor.writeMicroseconds(1500 - 100);
+    left_rear_motor.writeMicroseconds(1500 - 100);
+    right_rear_motor.writeMicroseconds(1500 - 100);
+    right_font_motor.writeMicroseconds(1500 - 100);
+    return false;
+  }
+
+  left_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
+  left_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
+  right_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
+  right_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
+
+
+
+  if (abs(SIDE_1_READING - SIDE_2_READING) < 20 && abs(sideTarget - SIDE_1_READING) < 5) {    //CALIBRATE 1st EXIT condition
+    return true;  //adjustment complete
+  }
+  else {
+    return false; //adjustment incomplete
+  }
+
+}
+
 bool forward()
 {
   int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);

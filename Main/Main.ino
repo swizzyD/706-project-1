@@ -37,6 +37,7 @@ static int ultrasonicTarget = 580; // pulse width not cm
 //State machine states
 enum STATE {
   INITIALISING,
+  ADJUSTMENT,
   RUNNING,
   STOPPED
 };
@@ -100,6 +101,9 @@ void loop(void)
     case INITIALISING:
       machine_state = initialising();
       break;
+    case ADJUSTMENT:
+      machine_state = adjusting();
+      break;
     case RUNNING: //Lipo Battery Volage OK
       machine_state =  running();
       break;
@@ -118,8 +122,41 @@ STATE initialising() {
   delay(1000); //One second delay to see the serial string "INITIALISING...."
   SerialCom->println("Enabling Motors...");
   enable_motors();
-  SerialCom->println("RUNNING STATE...");
-  return RUNNING;
+  SerialCom->println("ADJUSTMENT STATE...");
+  return ADJUSTMENT;
+}
+
+//---------------ADJUSTMENT STATE MACHINE-------------------
+STATE adjusting() {
+  static unsigned long previous_millis_1;
+  static unsigned long previous_millis_2;
+  static int adjustment_state = 1;
+  static bool adjustment_complete = false;
+
+  fast_flash_double_LED_builtin();
+
+  if (millis() - previous_millis_1 > SAMPLING_TIME) {
+    SerialCom ->print("adjustment state = ");
+    SerialCom->println(adjustment_state);    
+    previous_millis_1 = millis();
+
+    if (adjustment_state == 0) {
+      stop();
+      return STOPPED;
+    } 
+    else if (adjustment_state == 1) {
+      adjustment_complete = align();
+      
+      if (adjustment_complete) {
+        adjustment_state = 2;
+        return RUNNING;
+      } else {
+        adjustment_state = 1;
+      }
+    }
+  }
+   
+  return ADJUSTMENT;
 }
 
 STATE running() {
@@ -128,6 +165,7 @@ STATE running() {
   static unsigned long previous_millis_2;
   static int movement_state = 1;
   static bool movement_complete = false;
+  static int count = 0;
 
   fast_flash_double_LED_builtin();
 
@@ -143,21 +181,27 @@ STATE running() {
     else if (movement_state == 1) {
       
       movement_complete = forward();
+      
       if (movement_complete) {
         movement_state = 2;
       }
-      else {
+      else if (!movement_complete) {
         movement_state = 1;
       }
     }
-
-    else if (movement_state == 2){
+    else if (movement_state == 2) {
+      
       movement_complete = cw();
-      if(movement_complete){
+      
+      if (movement_complete && count != 3) {
         movement_state = 1;
+        count++;
       }
-      else{
+      else if (!movement_complete && count != 3) {
         movement_state = 2;
+      }
+      else if (count == 3) {
+        movement_state = 0;
       }
     }
   }
