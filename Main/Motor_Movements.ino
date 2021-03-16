@@ -39,51 +39,56 @@ void stop() //Stop
 //Need to recalibrate the side sensors (the back sensor has changed to long range
 bool align()
 {
-  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
-  int side_orientation_correction = side_orientation_PID.PID_update(15, SIDE_1_READING - SIDE_2_READING); //RECALIBRATE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  int sideMeasurement;
+  if(SIDE_1_READING > SIDE_2_READING){
+    sideMeasurement = SIDE_1_READING;
+  }
+  else{
+    sideMeasurement = SIDE_2_READING;
+  }
+  int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
+  int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING);
 
 #if DISP_READINGS
   SerialCom->print("side difference = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
   SerialCom->print("side controller output = ");
   SerialCom->println(side_orientation_correction);
+  SerialCom->print("front reading = ");
+  SerialCom->println(get_ultrasonic_range());
 #endif
-
-  //The different situations
-
-  static int out_range_value = 10; //////////////////////////////////////CALIBRATE!!!!!!!!!!!!!!!!!!!!!!!!!
-  
-  //incorrect orientation or complete opposite direction meaning both sensor out of range rotate ccw
-  if (SIDE_2_READING < out_range_value) {
-    //robot rotate ccw until at least side sensor 2 (long range) obtains a value
-    left_font_motor.writeMicroseconds(1500 - 100);
-    left_rear_motor.writeMicroseconds(1500 - 100);
-    right_rear_motor.writeMicroseconds(1500 - 100);
-    right_font_motor.writeMicroseconds(1500 - 100);
-    return false;
-  }
 
   left_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
   left_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
   right_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
   right_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
 
-
-
-  if (abs(SIDE_1_READING - SIDE_2_READING) < 20 && abs(sideTarget - SIDE_1_READING) < 5) {    //CALIBRATE 1st EXIT condition
-    return true;  //adjustment complete
+  if (abs(SIDE_1_READING - SIDE_2_READING) - 10 < 10 && abs(sideTarget - SIDE_1_READING) < 5 ) {
+    return true;  // movement complete
   }
   else {
-    return false; //adjustment incomplete
+    return false;  //movement imcomplete
   }
 
 }
 
 bool forward()
 {
-  int side_distance_correction = side_distance_PID.PID_update(sideTarget, SIDE_1_READING); // target, measuremet);
-  int side_orientation_correction = side_orientation_PID.PID_update(15, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
+
+  int sideMeasurement;
+  if(SIDE_1_READING > SIDE_2_READING){
+    sideMeasurement = SIDE_1_READING;
+  }
+  else{
+    sideMeasurement = SIDE_2_READING;
+  }
+  
+  int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
+  int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
   int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+
+
+  
 
 #if DISP_READINGS
   SerialCom->print("side difference = ");
@@ -99,7 +104,7 @@ bool forward()
   right_rear_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction + side_distance_correction);
   right_font_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction - side_distance_correction);
 
-  if (abs(SIDE_1_READING - SIDE_2_READING) < 20 && abs(sideTarget - SIDE_1_READING) < 5 && abs(ultrasonicTarget - get_ultrasonic_range()) < 10) {
+  if (abs(SIDE_1_READING - SIDE_2_READING) < 10 && abs(sideTarget - SIDE_1_READING) < 5 && abs(ultrasonicTarget - get_ultrasonic_range()) < 10) {
     return true;  // movement complete
   }
   else {

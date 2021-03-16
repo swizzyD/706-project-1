@@ -23,13 +23,13 @@
 
 //-------------------------------PID OBJECTS-----//LILINA PLZ TUNE
 // Kp, Ki, Kd, limMin, limMax
-PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  
-PID side_distance_PID(5.0f, 0.005f, 0.0f, -200, 200);
+PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);
+PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
 PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
-PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);   
+PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);
 
 static int turnTarget = 20000;
-static int sideTarget = 347;
+static int sideTarget = 280;
 static int ultrasonicTarget = 580; // pulse width not cm
 
 //------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ STATE initialising() {
   SerialCom->println("Enabling Motors...");
   enable_motors();
   SerialCom->println("ADJUSTMENT STATE...");
-  return ADJUSTMENT;
+  return RUNNING;
 }
 
 //---------------ADJUSTMENT STATE MACHINE-------------------
@@ -137,16 +137,16 @@ STATE adjusting() {
 
   if (millis() - previous_millis_1 > SAMPLING_TIME) {
     SerialCom ->print("adjustment state = ");
-    SerialCom->println(adjustment_state);    
+    SerialCom->println(adjustment_state);
     previous_millis_1 = millis();
 
     if (adjustment_state == 0) {
       stop();
       return STOPPED;
-    } 
+    }
     else if (adjustment_state == 1) {
       adjustment_complete = align();
-      
+
       if (adjustment_complete) {
         adjustment_state = 2;
         return RUNNING;
@@ -155,7 +155,7 @@ STATE adjusting() {
       }
     }
   }
-   
+
   return ADJUSTMENT;
 }
 
@@ -169,19 +169,20 @@ STATE running() {
 
   fast_flash_double_LED_builtin();
 
-//-----------------MOVEMENT STATE MACHINE---------------------
+  //-----------------MOVEMENT STATE MACHINE---------------------
   if (millis() - previous_millis_1 > SAMPLING_TIME) {
     SerialCom ->print("movement state = ");
-    SerialCom->println(movement_state);    
+    SerialCom->println(movement_state);
     previous_millis_1 = millis();
     if (movement_state == 0) {
       stop();
       return STOPPED;
     }
+
     else if (movement_state == 1) {
-      
-      movement_complete = forward();
-      
+
+      movement_complete = align();
+
       if (movement_complete) {
         movement_state = 2;
       }
@@ -189,16 +190,28 @@ STATE running() {
         movement_state = 1;
       }
     }
+
     else if (movement_state == 2) {
-      
+
+      movement_complete = forward();
+
+      if (movement_complete) {
+        movement_state = 3;
+      }
+      else if (!movement_complete) {
+        movement_state = 2;
+      }
+    }
+    else if (movement_state == 3) {
+
       movement_complete = cw();
-      
+
       if (movement_complete && count != 3) {
-        movement_state = 1;
+        movement_state = 2;
         count++;
       }
       else if (!movement_complete && count != 3) {
-        movement_state = 2;
+        movement_state = 3;
       }
       else if (count == 3) {
         movement_state = 0;
@@ -242,7 +255,7 @@ STATE stopped() {
   if (millis() - previous_millis > 500) { //print massage every 500ms
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
-    
+
     gyro_reading();
     side_reading();
     ultrasonic_reading();
