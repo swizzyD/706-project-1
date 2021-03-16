@@ -37,7 +37,6 @@ static int ultrasonicTarget = 580; // pulse width not cm
 //State machine states
 enum STATE {
   INITIALISING,
-  ADJUSTMENT,
   RUNNING,
   STOPPED
 };
@@ -101,9 +100,6 @@ void loop(void)
     case INITIALISING:
       machine_state = initialising();
       break;
-    case ADJUSTMENT:
-      machine_state = adjusting();
-      break;
     case RUNNING: //Lipo Battery Volage OK
       machine_state =  running();
       break;
@@ -126,38 +122,6 @@ STATE initialising() {
   return RUNNING;
 }
 
-//---------------ADJUSTMENT STATE MACHINE-------------------
-STATE adjusting() {
-  static unsigned long previous_millis_1;
-  static unsigned long previous_millis_2;
-  static int adjustment_state = 1;
-  static bool adjustment_complete = false;
-
-  fast_flash_double_LED_builtin();
-
-  if (millis() - previous_millis_1 > SAMPLING_TIME) {
-    SerialCom ->print("adjustment state = ");
-    SerialCom->println(adjustment_state);
-    previous_millis_1 = millis();
-
-    if (adjustment_state == 0) {
-      stop();
-      return STOPPED;
-    }
-    else if (adjustment_state == 1) {
-      adjustment_complete = align();
-
-      if (adjustment_complete) {
-        adjustment_state = 2;
-        return RUNNING;
-      } else {
-        adjustment_state = 1;
-      }
-    }
-  }
-
-  return ADJUSTMENT;
-}
 
 STATE running() {
 
