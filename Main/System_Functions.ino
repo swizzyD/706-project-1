@@ -1,8 +1,4 @@
 
-static char prevVal;
-static char val = "p";
-
-
 void fast_flash_double_LED_builtin()
 {
   static byte indexer = 0;

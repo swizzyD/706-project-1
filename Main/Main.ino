@@ -1,7 +1,6 @@
 /*
   Hardware:
     Arduino Mega2560 https://www.arduino.cc/en/Guide/ArduinoMega2560
-    MPU-9250 https://www.sparkfun.com/products/13762
     Ultrasonic Sensor - HC-SR04 https://www.sparkfun.com/products/13959
     Infrared Proximity Sensor - Sharp https://www.sparkfun.com/products/242
     Infrared Proximity Sensor Short Range - Sharp https://www.sparkfun.com/products/12728
@@ -22,15 +21,17 @@
 #define SIDE_2_READING analogRead(A6)
 
 
-//-------------------------------PID OBJECTS---------------------------------
-PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  // Kp, Ki, Kd, limMin, limMax
+//-------------------------------PID OBJECTS-----//LILINA PLZ TUNE
+// Kp, Ki, Kd, limMin, limMax
+PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  
 PID side_distance_PID(5.0f, 0.005f, 0.0f, -200, 200);
 PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
-PID Ultrasonic_PID(1.0f, 0.0f, 0.0f, -200, 200);   // Kp, Ki, Kd, limMin, limMax
+PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);   
 
-static int gyroTarget = 0;
+static int turnTarget = 20000;
 static int sideTarget = 347;
-static int frontTarget = 580; // pulse width not cm
+//static int ultrasonicTarget = 580; // pulse width not cm
+static int ultrasonicTarget = 150 - int(235/2) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor
 
 //------------------------------------------------------------------------------
 
@@ -95,7 +96,7 @@ void setup(void)
 void loop(void)
 {
   static STATE machine_state = INITIALISING;
-  //Finite-state machine Code
+
   switch (machine_state) {
     case INITIALISING:
       machine_state = initialising();
@@ -112,8 +113,6 @@ void loop(void)
 
 //---------------STATES------------------------------
 
-
-
 STATE initialising() {
   //initialising
   SerialCom->println("INITIALISING....");
@@ -121,7 +120,6 @@ STATE initialising() {
   SerialCom->println("Enabling Motors...");
   enable_motors();
   SerialCom->println("RUNNING STATE...");
-  update_sensor_targets();    //temporary!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   return RUNNING;
 }
 
@@ -131,37 +129,73 @@ STATE running() {
   static unsigned long previous_millis_2;
   static int movement_state = 1;
   static bool movement_complete = false;
-
+  static int turn_flag = 0;
   fast_flash_double_LED_builtin();
 
 //-----------------MOVEMENT STATE MACHINE---------------------
-  if (millis() - previous_millis_1 > SAMPLING_TIME) {    
+  if (millis() - previous_millis_1 > SAMPLING_TIME) {
+    SerialCom ->print("movement state = ");
+    SerialCom->println(movement_state);    
     previous_millis_1 = millis();
-    if (movement_state == 0) {
-      stop();
-      return STOPPED;
-    }
-    else if (movement_state == 1) {
-      movement_complete = forward();
-      if (movement_complete) {
-        movement_state = 0;
-      }
-      else {
-        movement_state = 1;
-      }
-    }
-    else if (movement_state == 2){
-      movement_complete = cw();
-      if(movement_complete){
-        movement_state = 1;
-      }
-      else{
-        movement_state = 2;
-      }
-    }
-    
-  }
-//---------------------------------------------------------------
+//    if (movement_state == 0) {
+//      stop();
+//      return STOPPED;
+//    }
+//    else if (movement_state == 1) {
+//      
+//      movement_complete = forward();
+//      if (movement_complete) {
+//        movement_state = 2;
+//      }
+//      else {
+//        movement_state = 1;
+//      }
+//    }
+//
+//    else if (movement_state == 2){
+//      movement_complete = cw();
+//      if(movement_complete){
+//        movement_state = 1;
+//      }
+//      else{
+//        movement_state = 2;
+//      }
+//    }
+//  }
+
+//-------------------SAM CODE REMIX (swizzyD on the beat)------------------------------------------------
+     switch (movement_state) {
+      case 0:
+        stop();
+        return STOPPED;
+      case 1:
+        movement_complete = forward();
+        if (movement_complete) {
+          movement_state = 2;
+        }
+        else {
+          movement_state = 1;
+        }
+
+       case 2:
+        if (turn_flag >= 3) {  
+          // Once the robot turns 3 times, STOP (because it has reached the final corner)
+          // What if it's turning at the start to find a clean edge?
+          movement_state = 0;
+        }
+        else {
+          movement_complete = cw();
+          if (movement_complete){
+            // finishes a turn, increment turn_flag and change state
+            turn_flag += 1;
+            movement_state = 1;
+          }
+          else {
+            movement_state = 2;
+          }
+        }
+     }
+
 
   if (millis() - previous_millis_2 > 500) {  //Arduino style 500ms timed execution statement
     previous_millis_2 = millis();
@@ -201,8 +235,7 @@ STATE stopped() {
     
     gyro_reading();
     side_reading();
-    front_reading();
-    SerialCom->println(get_ultrasonic_range());
+    ultrasonic_reading();
 
 
 #ifndef NO_BATTERY_V_OK
