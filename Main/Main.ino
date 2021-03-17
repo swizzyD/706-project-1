@@ -13,6 +13,8 @@
 #include <Servo.h>  //Need for Servo pulse output
 #include "PID_class.h"
 
+#include <math.h>
+
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 #define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
@@ -20,17 +22,24 @@
 #define SIDE_1_READING analogRead(A4)
 #define SIDE_2_READING analogRead(A6)
 
+#define DIST_BETWEEN_IR 0 //cm NEED TO MEASURE
+#define SIDE_DIST_TARGET 150 - 0 //distance_to_ir_from_centre CALCULATE THIS AND REPLACE 0
+
 
 //-------------------------------PID OBJECTS-----//LILINA PLZ TUNE
 // Kp, Ki, Kd, limMin, limMax
-PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);  
-PID side_distance_PID(5.0f, 0.005f, 0.0f, -200, 200);
+PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);
+PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
 PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
-PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);   
+PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);
+
+PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
+PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
 
 static int turnTarget = 20000;
-static int sideTarget = 347;
-static int ultrasonicTarget = 580; // pulse width not cm
+static int sideTarget = 280;
+//static int ultrasonicTarget = 580; // pulse width not cm
+static int ultrasonicTarget = 150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
 //------------------------------------------------------------------------------
 
@@ -118,9 +127,10 @@ STATE initialising() {
   delay(1000); //One second delay to see the serial string "INITIALISING...."
   SerialCom->println("Enabling Motors...");
   enable_motors();
-  SerialCom->println("RUNNING STATE...");
+  SerialCom->println("ADJUSTMENT STATE...");
   return RUNNING;
 }
+
 
 STATE running() {
 
@@ -128,36 +138,56 @@ STATE running() {
   static unsigned long previous_millis_2;
   static int movement_state = 1;
   static bool movement_complete = false;
+  static int count = 0;
 
   fast_flash_double_LED_builtin();
 
-//-----------------MOVEMENT STATE MACHINE---------------------
+  //-----------------MOVEMENT STATE MACHINE---------------------
   if (millis() - previous_millis_1 > SAMPLING_TIME) {
     SerialCom ->print("movement state = ");
-    SerialCom->println(movement_state);    
+    SerialCom->println(movement_state);
     previous_millis_1 = millis();
     if (movement_state == 0) {
       stop();
       return STOPPED;
     }
+
     else if (movement_state == 1) {
-      
-      movement_complete = forward();
+
+      movement_complete = align();
+
       if (movement_complete) {
         movement_state = 2;
       }
-      else {
+      else if (!movement_complete) {
         movement_state = 1;
       }
     }
 
-    else if (movement_state == 2){
-      movement_complete = cw();
-      if(movement_complete){
-        movement_state = 1;
+    else if (movement_state == 2) {
+
+      movement_complete = forward();
+
+      if (movement_complete) {
+        movement_state = 3;
       }
-      else{
+      else if (!movement_complete) {
         movement_state = 2;
+      }
+    }
+    else if (movement_state == 3) {
+
+      movement_complete = ccw();
+
+      if (movement_complete && count != 3) {
+        movement_state = 2;
+        count++;
+      }
+      else if (!movement_complete && count != 3) {
+        movement_state = 3;
+      }
+      else if (count == 3) {
+        movement_state = 0;
       }
     }
   }
@@ -198,7 +228,7 @@ STATE stopped() {
   if (millis() - previous_millis > 500) { //print massage every 500ms
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
-    
+
     gyro_reading();
     side_reading();
     ultrasonic_reading();

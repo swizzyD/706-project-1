@@ -25,4 +25,12 @@
   * ultrasonic code implemented
   * turning function to be improved
   * all controllers need tuning
+  
+  
+## 17 Mar
+   * modified clockwise and counter-clockwise turning (by using angle calculations)
+   * added IR sensor reading function in Motor_Movements
+   * DIST_BETWEEN_IR needs to be measured in cm
+   * SIDE_DIST_TARGET is currently 150 - 0 but zero needs to be replaced by the distance from IR sensors to centreline of robot (in cm)
+   * ultrasonic target distance needs to be changed once the sensor is mounted
 
