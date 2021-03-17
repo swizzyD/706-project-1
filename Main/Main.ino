@@ -26,8 +26,17 @@
 #define SIDE_DIST_TARGET 150 - 0 //distance_to_ir_from_centre CALCULATE THIS AND REPLACE 0
 
 
-//-------------------------------PID OBJECTS-----//LILINA PLZ TUNE
-// Kp, Ki, Kd, limMin, limMax
+
+//machine states
+enum STATE {
+  INITIALISING,
+  RUNNING,
+  STOPPED
+};
+
+
+//-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
+
 PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);
 PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
 PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
@@ -41,14 +50,9 @@ static int sideTarget = 280;
 //static int ultrasonicTarget = 580; // pulse width not cm
 static int ultrasonicTarget = 150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
-//------------------------------------------------------------------------------
 
-//State machine states
-enum STATE {
-  INITIALISING,
-  RUNNING,
-  STOPPED
-};
+
+
 
 //-----------------Default motor control pins--------------
 const byte left_front = 46;
@@ -58,7 +62,7 @@ const byte right_front = 51;
 //---------------------------------------------------------------------------------------------------------
 
 
-//-----------Default ultrasonic ranging sensor pins, these pins are defined my the Shield-------------------
+//-----------Ultrasonic pins--------------------------------------------------------
 const int TRIG_PIN = 48;
 const int ECHO_PIN = 49;
 
@@ -92,10 +96,8 @@ void setup(void)
   // Setup the Serial port and pointer, the pointer allows switching the debug info through the USB port(Serial) or Bluetooth port(Serial1) with ease.
   SerialCom = &Serial;
   SerialCom->begin(115200);
-  SerialCom->println("MECHENG706_Base_Code_25/01/2018");
   SerialCom->println("Setup....");
   SerialCom->println("PID init....");
-
 
   delay(1000); //settling time but no really needed
 
@@ -109,7 +111,7 @@ void loop(void)
     case INITIALISING:
       machine_state = initialising();
       break;
-    case RUNNING: //Lipo Battery Volage OK
+    case RUNNING: //includes Lipo Battery check
       machine_state =  running();
       break;
     case STOPPED: //Stop of Lipo Battery voltage is too low, to protect Battery
@@ -119,12 +121,11 @@ void loop(void)
 }
 
 
-//---------------STATES------------------------------
+//--------------- MACHINE STATES------------------------------
 
 STATE initialising() {
   //initialising
   SerialCom->println("INITIALISING....");
-  delay(1000); //One second delay to see the serial string "INITIALISING...."
   SerialCom->println("Enabling Motors...");
   enable_motors();
   SerialCom->println("ADJUSTMENT STATE...");
@@ -147,15 +148,14 @@ STATE running() {
     SerialCom ->print("movement state = ");
     SerialCom->println(movement_state);
     previous_millis_1 = millis();
+
     if (movement_state == 0) {
       stop();
       return STOPPED;
     }
 
     else if (movement_state == 1) {
-
       movement_complete = align();
-
       if (movement_complete) {
         movement_state = 2;
       }
@@ -165,9 +165,7 @@ STATE running() {
     }
 
     else if (movement_state == 2) {
-
       movement_complete = forward();
-
       if (movement_complete) {
         movement_state = 3;
       }
@@ -175,25 +173,25 @@ STATE running() {
         movement_state = 2;
       }
     }
+
     else if (movement_state == 3) {
-
-      movement_complete = ccw();
-
+      movement_complete = cw();
       if (movement_complete && count != 3) {
         movement_state = 2;
         count++;
       }
+      else if (movement_complete && count == 3) {
+        movement_state = 0;
+      }
       else if (!movement_complete && count != 3) {
         movement_state = 3;
       }
-      else if (count == 3) {
-        movement_state = 0;
-      }
     }
+    
   }
 
 
-  if (millis() - previous_millis_2 > 500) {  //Arduino style 500ms timed execution statement
+  if (millis() - previous_millis_2 > 500) {  
     previous_millis_2 = millis();
     SerialCom->println("RUNNING---------");
 
