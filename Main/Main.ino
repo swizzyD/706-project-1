@@ -23,7 +23,7 @@
 #define SIDE_2_READING analogRead(A6)
 
 #define DIST_BETWEEN_IR 0 //cm NEED TO MEASURE
-#define SIDE_DIST_TARGET 150 - 0 //distance_to_ir_from_centre CALCULATE THIS AND REPLACE 0
+#define SIDE_DIST_TARGET 15 - 0 //distance_to_ir_from_centre in cm CALCULATE THIS AND REPLACE 0
 
 
 

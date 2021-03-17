@@ -191,19 +191,19 @@ int ccw ()
     int distance_side_2 = get_ir_2;
     
     
-
+    // POSTIVE ALPHA MEANS MOVE CW, NEGATIVE ALPHA MEANS MOVE CCW
     int alpha = atan2((distance_side_2 - distance_side_1),DIST_BETWEEN_IR); // angle alpha in radians
     int mid_dist = (DIST_BETWEEN_IR/2.0) * tan(alpha); //approximate distance from middle-left edge of robot to the wall
-    alpha = alpha  * (71/4068.0); // degrees conversion
+    //alpha = alpha  * (71/4068.0); // degrees conversion
     int dist_corr = side_dist_corr.PID_update(SIDE_DIST_TARGET, mid_dist);
     int a_corr = alpha_correction.PID_update(0, alpha); 
     
     if ((distance_side_1 < 30) && (distance_side_2 < 30)) {
       // if sensors are in range, move by a controlled amount
-      left_font_motor.writeMicroseconds(1500 - a_corr - dist_corr);
-      left_rear_motor.writeMicroseconds(1500 - a_corr + dist_corr);
-      right_rear_motor.writeMicroseconds(1500 - a_corr + dist_corr);
-      right_font_motor.writeMicroseconds(1500 - a_corr - dist_corr);
+      left_font_motor.writeMicroseconds(1500 + a_corr + dist_corr); // THESE MAY ALL BE WRONG
+      left_rear_motor.writeMicroseconds(1500 + a_corr - dist_corr);
+      right_rear_motor.writeMicroseconds(1500 + a_corr - dist_corr);
+      right_font_motor.writeMicroseconds(1500 + a_corr + dist_corr);
     }
 
     // OUT OF RANGE CASE??
@@ -247,7 +247,7 @@ int cw ()
 
     int alpha = atan2((distance_side_2 - distance_side_1),DIST_BETWEEN_IR); // angle alpha in radians
     int mid_dist = (DIST_BETWEEN_IR/2.0) * tan(alpha); //approximate distance from middle-left edge of robot to the wall
-    alpha = alpha  * (71/4068.0); // degrees conversion
+    //alpha = alpha  * (71/4068.0); // degrees conversion
     int dist_corr = side_dist_corr.PID_update(SIDE_DIST_TARGET, mid_dist);
     int a_corr = alpha_correction.PID_update(0, alpha); 
 
@@ -263,10 +263,10 @@ int cw ()
  
     if ((distance_side_1 < 30) && (distance_side_2 < 30)) {
       // if sensors are in range, move by a controlled amount
-      left_font_motor.writeMicroseconds(1500 + a_corr - dist_corr);
-      left_rear_motor.writeMicroseconds(1500 + a_corr + dist_corr);
-      right_rear_motor.writeMicroseconds(1500 + a_corr + dist_corr);
-      right_font_motor.writeMicroseconds(1500 + a_corr - dist_corr);
+      left_font_motor.writeMicroseconds(1500 - a_corr + dist_corr);
+      left_rear_motor.writeMicroseconds(1500 - a_corr - dist_corr);
+      right_rear_motor.writeMicroseconds(1500 - a_corr - dist_corr);
+      right_font_motor.writeMicroseconds(1500 - a_corr + dist_corr);
     }
     // DOES THIS IF-STATEMENT NEED AN OUT-OF-RANGE CASE?
 
