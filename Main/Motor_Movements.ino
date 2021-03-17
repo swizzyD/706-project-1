@@ -1,9 +1,4 @@
 
-//The Vex Motor Controller 29 use Servo Control signals to determine speed and direction, with 0 degrees meaning neutral https://en.wikipedia.org/wiki/Servo_control
-
-static double Tr = 0; //ramp time ms
-
-
 void disable_motors()
 {
   left_font_motor.detach();  // detach the servo on pin left_front to turn Vex Motor Controller 29 Off
@@ -24,7 +19,8 @@ void enable_motors()
   right_rear_motor.attach(right_rear);  // attaches the servo on pin right_rear to turn Vex Motor Controller 29 On
   right_font_motor.attach(right_front);  // attaches the servo on pin right_front to turn Vex Motor Controller 29 On
 }
-void stop() //Stop
+
+void stop() 
 {
   left_font_motor.writeMicroseconds(1500);
   left_rear_motor.writeMicroseconds(1500);
@@ -32,13 +28,11 @@ void stop() //Stop
   right_font_motor.writeMicroseconds(1500);
 }
 
-//Function which align the robot to the 15cm centre line
-//Returns true if the alignment process is completed, else false
-//Sensors are 5.5 cm from centre of robot -> should be 20.5 cm from the wall
-//Ahhhhh idkkkkk if the plus or minus signs are correct or not QAQ
-//Need to recalibrate the side sensors (the back sensor has changed to long range
+
 bool align()
 {
+
+  //moves side closest to wall outwards to prevent collision
   int sideMeasurement;
   if(SIDE_1_READING > SIDE_2_READING){
     sideMeasurement = SIDE_1_READING;
@@ -46,16 +40,17 @@ bool align()
   else{
     sideMeasurement = SIDE_2_READING;
   }
+  
   int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING);
 
 #if DISP_READINGS
-  SerialCom->print("side difference = ");
+  SerialCom->print("SIDE_1_READING - SIDE_2_READING = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
-  SerialCom->print("side controller output = ");
+  SerialCom->print("side_orientation_correction = ");
   SerialCom->println(side_orientation_correction);
-  SerialCom->print("front reading = ");
-  SerialCom->println(get_ultrasonic_range());
+  SerialCom->print("side_distance_correction = ");
+  SerialCom->println(side_distance_correction);
 #endif
 
   left_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
@@ -75,6 +70,7 @@ bool align()
 bool forward()
 {
 
+  //moves side closest to wall outwards to prevent collision
   int sideMeasurement;
   if(SIDE_1_READING > SIDE_2_READING){
     sideMeasurement = SIDE_1_READING;
@@ -89,13 +85,14 @@ bool forward()
 
 
   
-
 #if DISP_READINGS
-  SerialCom->print("side difference = ");
+  SerialCom->print("SIDE_1_READING - SIDE_2_READING = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
-  SerialCom->print("side controller output = ");
+  SerialCom->print("side_orientation_correction = ");
   SerialCom->println(side_orientation_correction);
-  SerialCom->print("front reading = ");
+  SerialCom->print("side_distance_correction = ");
+  SerialCom->println(side_distance_correction);
+  SerialCom->print("ultrasonic reading = ");
   SerialCom->println(get_ultrasonic_range());
 #endif
 
@@ -114,16 +111,29 @@ bool forward()
 
 void reverse ()
 {
-  int side_distance_correction = side_distance_PID.PID_update(335, SIDE_1_READING); // target, measuremet);
-  int side_orientation_correction = side_orientation_PID.PID_update(15, SIDE_1_READING - SIDE_2_READING);
+ //moves side closest to wall outwards to prevent collision
+  int sideMeasurement;
+  if(SIDE_1_READING > SIDE_2_READING){
+    sideMeasurement = SIDE_1_READING;
+  }
+  else{
+    sideMeasurement = SIDE_2_READING;
+  }
+  
+  int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
+  int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
   int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
 
+
+  
 #if DISP_READINGS
-  SerialCom->print("side difference = ");
+  SerialCom->print("SIDE_1_READING - SIDE_2_READING = ");
   SerialCom->println(SIDE_1_READING - SIDE_2_READING);
-  SerialCom->print("side controller output = ");
+  SerialCom->print("side_orientation_correction = ");
   SerialCom->println(side_orientation_correction);
-  SerialCom->print("front reading = ");
+  SerialCom->print("side_distance_correction = ");
+  SerialCom->println(side_distance_correction);
+  SerialCom->print("ultrasonic reading = ");
   SerialCom->println(get_ultrasonic_range());
 #endif
 
@@ -136,7 +146,7 @@ void reverse ()
 
 void ccw ()
 {
-  int speed_val = 100;  //temporary!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  int speed_val = 100;  
   left_font_motor.writeMicroseconds(1500 - speed_val);
   left_rear_motor.writeMicroseconds(1500 - speed_val);
   right_rear_motor.writeMicroseconds(1500 - speed_val);
@@ -162,7 +172,7 @@ int cw ()
 
 void strafe_left ()
 {
-  int speed_val = 100;  //temporary!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  int speed_val = 100;  
   left_font_motor.writeMicroseconds(1500 - speed_val);
   left_rear_motor.writeMicroseconds(1500 + speed_val);
   right_rear_motor.writeMicroseconds(1500 + speed_val);
@@ -171,7 +181,7 @@ void strafe_left ()
 
 void strafe_right ()
 {
-  int speed_val = 100;  //temporary!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  int speed_val = 100;  
   left_font_motor.writeMicroseconds(1500 + speed_val);
   left_rear_motor.writeMicroseconds(1500 - speed_val);
   right_rear_motor.writeMicroseconds(1500 - speed_val);
