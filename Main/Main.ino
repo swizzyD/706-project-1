@@ -22,10 +22,16 @@
 #define SIDE_1_READING analogRead(A4)
 #define SIDE_2_READING analogRead(A6)
 
+
+//---------maybe remove these if alpha angle isn't going to be used----------
+//---------------------------------------------------------------------------
 #define DIST_BETWEEN_IR 12 //cm NEED TO MEASURE
 #define SIDE_DIST_TARGET 15 - 7.5 //distance_to_ir_from_centre in cm CALCULATE THIS AND REPLACE 0
+//-----------------------------------------------------------------------------
+
 
 #define GYRO_TARGET_ANGLE 90
+#define ULTRASONIC_MOVE_THRESH 25
 
 
 
@@ -67,6 +73,8 @@ static int sideTarget = 280;
 //static int ultrasonicTarget = 580; // pulse width not cm
 static int ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
+// Variable for get_ultrasonic_range()
+static int prev_mm = 0;
 
 
 
@@ -222,6 +230,7 @@ STATE running() {
       movement_complete = cw();
       if (movement_complete && count != 3) {
         movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
+//        movement_state = 1;
         count++;
       }
       else if (movement_complete && count == 3) {

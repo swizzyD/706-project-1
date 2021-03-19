@@ -47,7 +47,15 @@
     * getting ir distances uses datasheet calculations, may need calibration
     * improve get_ultrasonic_range code
   * modified clockwise and counter-clockwise turning (by using angle calculations)
-  * added IR sensor reading function in Motor_Movements
+  * added IR sensor reading function in 
+  
+ ## 19 Mar
+	* Sam added ultrasonic sensor code and also implemented gyro turning
+	* align robot state after rotation?
+	* Need to test and edit GYRO_TARGET_ANGLE and ULTRASONIC_MOVE_THRESH
+	* maybe run gyro calibration after every turn?
+	
+
   
   
 

@@ -291,6 +291,7 @@ int cw ()
   right_rear_motor.writeMicroseconds(1500 - gyro_corr);
   right_font_motor.writeMicroseconds(1500 - gyro_corr);
 
+/// Uncomment this if the robot is turning the other way OR change GYRO_TARGET_ANGLE
 //  left_font_motor.writeMicroseconds(1500 + gyro_corr);
 //  left_rear_motor.writeMicroseconds(1500 + gyro_corr);
 //  right_rear_motor.writeMicroseconds(1500 + gyro_corr);

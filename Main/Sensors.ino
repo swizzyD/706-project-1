@@ -75,15 +75,17 @@ int get_ultrasonic_range()
   pinMode(ECHO_PIN, INPUT);
   duration = pulseIn(ECHO_PIN, HIGH);
 
+  
   // Convert the time into a distance
   mm = (duration / 2.0) / 2.91;
 
-  // Rejecting out of range values
-  if (mm > 4000) {
-    mm = 0;
+  // Rejecting out of range values and jitter
+  // Recursively calling get_ultrasonic_range() until mm is a valid value
+  if ((mm > 4000) || (abs(prev_mm - mm) >  ULTRASONIC_MOVE_THRESH)) {
+    mm = get_ultrasonic_range();
   }
 
-  // appending to mm_array (last 10 values)
+  prev_mm = mm;
   
   return mm;
 }
