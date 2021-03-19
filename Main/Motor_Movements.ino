@@ -192,7 +192,7 @@ int ccw ()
     
     
     // POSTIVE ALPHA MEANS MOVE CW, NEGATIVE ALPHA MEANS MOVE CCW
-    int alpha = atan2((distance_side_2 - distance_side_1),DIST_BETWEEN_IR); // angle alpha in radians
+    double alpha = atan2((distance_side_2 - distance_side_1),DIST_BETWEEN_IR); // angle alpha in radians
     int mid_dist = (DIST_BETWEEN_IR/2.0) * tan(alpha); //approximate distance from middle-left edge of robot to the wall
     //alpha = alpha  * (71/4068.0); // degrees conversion
     int dist_corr = side_dist_corr.PID_update(SIDE_DIST_TARGET, mid_dist);
@@ -240,81 +240,63 @@ int cw ()
 
 //-----------------------------------SAM CODE------------------------------------------
 // This function rotates the robot clockwise and is used in turning
-    int distance_side_1 = get_ir_1;
-    int distance_side_2 = get_ir_2;
-    
-    
+//    int distance_side_1 = get_ir_1;
+//    int distance_side_2 = get_ir_2;
+//    printf("side 1: %d", distance_side_1);
+//    printf("side 2: %d", distance_side_2);
+//    
+//    
+//
+//    double alpha = atan2((distance_side_2 - distance_side_1),DIST_BETWEEN_IR); // angle alpha in radians
+//    printf("alpha: %d",alpha);
+//    int mid_dist = (DIST_BETWEEN_IR/2.0) * tan(alpha); //approximate distance from middle-left edge of robot to the wall
+//    //alpha = alpha  * (71/4068.0); // degrees conversion
+//    int dist_corr = side_dist_corr.PID_update(SIDE_DIST_TARGET, mid_dist);
+//    int a_corr = alpha_correction.PID_update(0, alpha); 
+//
+//    while (get_ultrasonic_range < 200) {
+//      // While ultrasonic doesn't read the far side wall, turn clockwise
+//      // 100 is a semi-arbitrary value, just need the robot to rotate far enough that the below if-statement doesn't get triggered at the close-left wall
+//      left_font_motor.writeMicroseconds(1500 + 200);
+//      left_rear_motor.writeMicroseconds(1500 + 200);
+//      right_rear_motor.writeMicroseconds(1500 + 200);
+//      right_font_motor.writeMicroseconds(1500 + 200);
+//    }
+//    // POTENTIAL PROBLEM WITH ABOVE CODE AND BELOW CODE IF THE TOP CODE BLOCK CAUSES OVER-ROTATION
+// 
+//    if ((distance_side_1 < 30) && (distance_side_2 < 30)) {
+//      // if sensors are in range, move by a controlled amount
+//      left_font_motor.writeMicroseconds(1500 - a_corr + dist_corr);
+//      left_rear_motor.writeMicroseconds(1500 - a_corr - dist_corr);
+//      right_rear_motor.writeMicroseconds(1500 - a_corr - dist_corr);
+//      right_font_motor.writeMicroseconds(1500 - a_corr + dist_corr);
+//    }
+//    // DOES THIS IF-STATEMENT NEED AN OUT-OF-RANGE CASE?
+//
+//
+//    if (abs(distance_side_2 - distance_side_1) < 2) {
+//      // difference between sensor reading 2cm threshold
+//      return true;
+//    }
+//    else {
+//      return false;
+//    }
+//    
+  gyro();
+  int gyro_corr = gyro_PID.PID_update(GYRO_TARGET_ANGLE, currentAngle); // target, measuremet);
+  //int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
+  //int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+  left_font_motor.writeMicroseconds(1500 - gyro_corr);
+  left_rear_motor.writeMicroseconds(1500 - gyro_corr);
+  right_rear_motor.writeMicroseconds(1500 - gyro_corr);
+  right_font_motor.writeMicroseconds(1500 - gyro_corr);
 
-    int alpha = atan2((distance_side_2 - distance_side_1),DIST_BETWEEN_IR); // angle alpha in radians
-    int mid_dist = (DIST_BETWEEN_IR/2.0) * tan(alpha); //approximate distance from middle-left edge of robot to the wall
-    //alpha = alpha  * (71/4068.0); // degrees conversion
-    int dist_corr = side_dist_corr.PID_update(SIDE_DIST_TARGET, mid_dist);
-    int a_corr = alpha_correction.PID_update(0, alpha); 
-
-    while (get_ultrasonic_range < 100) {
-      // While ultrasonic doesn't read the far side wall, turn clockwise
-      // 100 is a semi-arbitrary value, just need the robot to rotate far enough that the below if-statement doesn't get triggered at the close-left wall
-      left_font_motor.writeMicroseconds(1500 + 200);
-      left_rear_motor.writeMicroseconds(1500 + 200);
-      right_rear_motor.writeMicroseconds(1500 + 200);
-      right_font_motor.writeMicroseconds(1500 + 200);
-    }
-    // POTENTIAL PROBLEM WITH ABOVE CODE AND BELOW CODE IF THE TOP CODE BLOCK CAUSES OVER-ROTATION
- 
-    if ((distance_side_1 < 30) && (distance_side_2 < 30)) {
-      // if sensors are in range, move by a controlled amount
-      left_font_motor.writeMicroseconds(1500 - a_corr + dist_corr);
-      left_rear_motor.writeMicroseconds(1500 - a_corr - dist_corr);
-      right_rear_motor.writeMicroseconds(1500 - a_corr - dist_corr);
-      right_font_motor.writeMicroseconds(1500 - a_corr + dist_corr);
-    }
-    // DOES THIS IF-STATEMENT NEED AN OUT-OF-RANGE CASE?
-
-
-    if (abs(distance_side_2 - distance_side_1) < 2) {
-      // difference between sensor reading 2cm threshold
-      return true;
-    }
-    else {
-      return false;
-    }
-    
-    
+//  left_font_motor.writeMicroseconds(1500 + gyro_corr);
+//  left_rear_motor.writeMicroseconds(1500 + gyro_corr);
+//  right_rear_motor.writeMicroseconds(1500 + gyro_corr);
+//  right_font_motor.writeMicroseconds(1500 + gyro_corr);
     
 }
-
-void align2 ()
-{
-// NEEDS FIXING IF TO BE USED----------------------------------------------------------------------------------------------------------------------------------------------
-// NEEDS FIXING IF TO BE USED----------------------------------------------------------------------------------------------------------------------------------------------
-// NEEDS FIXING IF TO BE USED----------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------SAM CODE---------------------------------
-  // tbh this looks more like a align function rather than a 90 deg ccw rotate
-    int distance_to_ir_from_centre = 0;
-    int distance_target = 150 - distance_to_ir_from_centre;
-    int distance_side_1 = get_ir_1;
-    int distance_side_2 = get_ir_2;
-
-
-
-    int alpha = atan2((distance_side_2 - distance_side_1),DIST_BETWEEN_IR) * (71/4068); // angle alpha in degrees
-
-    if (abs(alpha) < 2) {
-      // within 2 degree threshold
-      return 1;
-    }
-    else {
-      // if angle alpha is greater than zero, robot needs to rotate right
-      if (alpha > 0) {
-        
-      }
-      // if angle alpha is less than zero, robot needs to rotate left
-      else if (alpha < 0) {
-        
-      }
-    }
-}
-
 
 void strafe_left ()
 {

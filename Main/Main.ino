@@ -22,8 +22,10 @@
 #define SIDE_1_READING analogRead(A4)
 #define SIDE_2_READING analogRead(A6)
 
-#define DIST_BETWEEN_IR 0 //cm NEED TO MEASURE
-#define SIDE_DIST_TARGET 15 - 0 //distance_to_ir_from_centre in cm CALCULATE THIS AND REPLACE 0
+#define DIST_BETWEEN_IR 12 //cm NEED TO MEASURE
+#define SIDE_DIST_TARGET 15 - 7.5 //distance_to_ir_from_centre in cm CALCULATE THIS AND REPLACE 0
+
+#define GYRO_TARGET_ANGLE 90
 
 
 
@@ -33,6 +35,20 @@ enum STATE {
   RUNNING,
   STOPPED
 };
+
+//-------------------------------------------GYRO VARIABLES--------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int sensorPin = 3;             //define the pin that gyro is connected
+int T = 100;                    // T is the time of one loop
+int sensorValue = 0;            // read out value of sensor
+float gyroSupplyVoltage = 5;    // supply voltage for gyro
+float gyroZeroVoltage = 0;      // the value of voltage when gyro is zero
+float gyroSensitivity = 0.007;  // gyro sensitivity unit is (v/degree/second) get from datasheet
+float rotationThreshold = 1.5;  // because of gyro drifting, defining rotation angular velocity  less than                                                        // this value will not be ignored
+float gyroRate = 0;             // read out value of sensor in voltage
+float currentAngle = 0;         // current angle calculated by angular velocity integral on
+byte serialRead = 0;            // for serial print control
+
 
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
@@ -45,10 +61,11 @@ PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);
 PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
 PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
 
+
 static int turnTarget = 20000;
 static int sideTarget = 280;
 //static int ultrasonicTarget = 580; // pulse width not cm
-static int ultrasonicTarget = 150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
+static int ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
 
 
@@ -98,6 +115,33 @@ void setup(void)
   SerialCom->begin(115200);
   SerialCom->println("Setup....");
   SerialCom->println("PID init....");
+
+
+  //-----------------------------------GYRO SETUP----------------------------------------------------------------
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // this section is initialize the sensor, find the the value of voltage when gyro is zero
+  int i;
+  float sum = 0;
+  pinMode(sensorPin, INPUT);
+  Serial.println("please keep the sensor still for calibration");
+  Serial.println("get the gyro zero voltage");
+  for (i = 0; i < 100; i++)     //  read 100 values of voltage when gyro is at still, to calculate the zero-drift
+  {
+    sensorValue = analogRead(sensorPin);
+    sum += sensorValue;
+  }
+  delay(5);
+
+  gyroZeroVoltage = sum / 100;  // average the sum as the zero drifting
+  Serial.print("Zero Voltage: ");
+  Serial.println(gyroZeroVoltage);
+
+
+
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  
 
   delay(1000); //settling time but no really needed
 
@@ -177,7 +221,7 @@ STATE running() {
     else if (movement_state == 3) {
       movement_complete = cw();
       if (movement_complete && count != 3) {
-        movement_state = 2;
+        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
         count++;
       }
       else if (movement_complete && count == 3) {

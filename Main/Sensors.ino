@@ -1,6 +1,3 @@
-int mm_array[10];
-
-
 int get_ultrasonic_range()
 {
 //  unsigned long t1;
@@ -79,10 +76,10 @@ int get_ultrasonic_range()
   duration = pulseIn(ECHO_PIN, HIGH);
 
   // Convert the time into a distance
-  mm = ((duration*10)/2) / 29.1;
+  mm = (duration / 2.0) / 2.91;
 
   // Rejecting out of range values
-  if (mm > 400) {
+  if (mm > 4000) {
     mm = 0;
   }
 
@@ -111,4 +108,41 @@ void gyro_reading()
 {
   SerialCom->print("gyro reading:");
   SerialCom->println(GYRO_READING);
+}
+
+//-------------------------------------------------GYRO DUMP-----------------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void gyro()
+{
+  if (Serial.available())           // Check for input from terminal
+  { 
+    serialRead = Serial.read();     // Read input
+    if (serialRead == 49)           // Check for flag to execute, 49 is asci for 1
+    { 
+      Serial.end();                 // end the serial communication to display the sensor data on monitor
+    }
+  }
+  // convert the 0-1023 signal to 0-5v
+  gyroRate = (analogRead(sensorPin) * gyroSupplyVoltage) / 1023; 
+  // find the voltage offset the value of voltage when gyro is zero (still)
+  gyroRate -= (gyroZeroVoltage / 1023 * 5); 
+  // read out voltage divided the gyro sensitivity to calculate the angular velocity
+  float angularVelocity = gyroRate / gyroSensitivity; 
+  // if the angular velocity is less than the threshold, ignore it
+  if ((angularVelocity >= rotationThreshold) || (angularVelocity <= -rotationThreshold)) { // we are running a loop in T. one second will run (1000/T).
+    float angleChange = angularVelocity / (1000 / T);
+    currentAngle -= angleChange;
+  }  // keep the angle between 0-360
+  if (currentAngle < 0)    {
+    currentAngle += 360;
+  }  else if (currentAngle > 359) {
+    currentAngle -= 360;
+  } 
+  Serial.print("Angular Velocity: ");
+  Serial.print(angularVelocity);
+  Serial.print(" Current Angle: ");
+  Serial.println(currentAngle); 
+  // control the time per loop
+  //delay (T);
 }
