@@ -30,9 +30,10 @@
 //-----------------------------------------------------------------------------
 
 
-#define GYRO_TARGET_ANGLE 90
+#define GYRO_TARGET_ANGLE 270
 #define ULTRASONIC_MOVE_THRESH 25
 
+  static int count = 0;
 
 
 //machine states
@@ -59,10 +60,10 @@ byte serialRead = 0;            // for serial print control
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
-PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);
+PID gyro_PID(0.5f, 0.01f, 0.0f, -200, 200);
 PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
 PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
-PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);
+PID Ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
 
 PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
 PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
@@ -76,7 +77,7 @@ static int ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half
 // Variable for get_ultrasonic_range()
 static int prev_mm = 0;
 
-
+long integrator = 0;
 
 
 //-----------------Default motor control pins--------------
@@ -191,7 +192,7 @@ STATE running() {
   static unsigned long previous_millis_2;
   static int movement_state = 1;
   static bool movement_complete = false;
-  static int count = 0;
+
 
   fast_flash_double_LED_builtin();
 
@@ -200,6 +201,8 @@ STATE running() {
     SerialCom ->print("movement state = ");
     SerialCom->println(movement_state);
     previous_millis_1 = millis();
+    SerialCom->print("count = ");
+    SerialCom->println(count);
 
     if (movement_state == 0) {
       stop();
@@ -273,12 +276,15 @@ STATE stopped() {
   static byte counter_lipo_voltage_ok;
   static unsigned long previous_millis;
   int Lipo_level_cal;
+  count = 0;
   disable_motors();
   slow_flash_LED_builtin();
 
   if (millis() - previous_millis > 500) { //print massage every 500ms
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
+
+ 
 
     gyro_reading();
     side_reading();
