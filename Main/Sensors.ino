@@ -62,7 +62,7 @@ int get_ultrasonic_range()
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
   // Clearing the trig pin
   digitalWrite(TRIG_PIN,LOW);
-  delayMicroseconds(5);
+  delayMicroseconds(2);
   // pulsing high for at least 10 microseconds
   digitalWrite(TRIG_PIN, HIGH);
   delayMicroseconds(10);
@@ -79,13 +79,14 @@ int get_ultrasonic_range()
   // Convert the time into a distance
   mm = (duration / 2.0) / 2.91;
 
-  // Rejecting out of range values and jitter
-  // Recursively calling get_ultrasonic_range() until mm is a valid value
-  if ((mm > 4000) || (abs(prev_mm - mm) >  ULTRASONIC_MOVE_THRESH)) {
-    mm = get_ultrasonic_range();
-  }
+//  // Rejecting out of range values and jitter
+//  // Recursively calling get_ultrasonic_range() until mm is a valid value
+//  if ((mm > 4000) || (abs(prev_mm - mm) >  ULTRASONIC_MOVE_THRESH)) {
+//    mm = get_ultrasonic_range();
+//  }
 
   prev_mm = mm;
+  
   
   return mm;
 }
@@ -133,7 +134,7 @@ void gyro()
   float angularVelocity = gyroRate / gyroSensitivity; 
   // if the angular velocity is less than the threshold, ignore it
   if ((angularVelocity >= rotationThreshold) || (angularVelocity <= -rotationThreshold)) { // we are running a loop in T. one second will run (1000/T).
-    float angleChange = angularVelocity / (1000 / T);
+    float angleChange = angularVelocity / (1000 / SAMPLING_TIME);
     currentAngle -= angleChange;
   }  // keep the angle between 0-360
   if (currentAngle < 0)    {
