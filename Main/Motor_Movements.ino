@@ -1,240 +1,285 @@
-//The Vex Motor Controller 29 use Servo Control signals to determine speed and direction, with 0 degrees meaning neutral https://en.wikipedia.org/wiki/Servo_control
+/*
+  Hardware:
+    Arduino Mega2560 https://www.arduino.cc/en/Guide/ArduinoMega2560
+    Ultrasonic Sensor - HC-SR04 https://www.sparkfun.com/products/13959
+    Infrared Proximity Sensor - Sharp https://www.sparkfun.com/products/242
+    Infrared Proximity Sensor Short Range - Sharp https://www.sparkfun.com/products/12728
+    Servo - Generic (Sub-Micro Size) https://www.sparkfun.com/products/9065
+    Vex Motor Controller 29 https://www.vexrobotics.com/276-2193.html
+    Vex Motors https://www.vexrobotics.com/motors.html
+    Turnigy nano-tech 2200mah 2S https://hobbyking.com/en_us/turnigy-nano-tech-2200mah-2s-25-50c-lipo-pack.html
+*/
 
-static double Tr = 0; //ramp time ms
+#include <math.h>
+#include <Servo.h>  //Need for Servo pulse output
+#include "PID_class.h"
 
 
+//#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
+#define DISP_READINGS 1
+#define SAMPLING_TIME 20 //ms , operate at 50Hz
+#define GYRO_READING analogRead(A3)
+#define SIDE_1_READING analogRead(A4)
+#define SIDE_2_READING analogRead(A6)
 
-int get_ir_1()
+#define GYRO_TARGET_ANGLE 270
+#define ULTRASONIC_MOVE_THRESH 25
+
+static int count = 0;
+
+
+//machine states
+enum STATE {
+  INITIALISING,
+  RUNNING,
+  STOPPED
+};
+
+//-------------------------------------------GYRO VARIABLES--------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int sensorValue = 0;            // read out value of sensor
+float gyroSupplyVoltage = 5;    // supply voltage for gyro
+float gyroZeroVoltage = 0;      // the value of voltage when gyro is zero
+float gyroSensitivity = 0.007;  // gyro sensitivity unit is (v/degree/second) get from datasheet
+float rotationThreshold = 1.5;  // because of gyro drifting, defining rotation angular velocity  less than                                                        // this value will not be ignored
+float gyroRate = 0;             // read out value of sensor in voltage
+float currentAngle = 0;         // current angle calculated by angular velocity integral on
+
+
+//-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
+
+PID gyro_PID(0.5f, 0.01f, 0.0f, -200, 200);
+PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
+PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
+PID Ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
+
+PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
+PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
+
+
+static int turnTarget = 20000;
+static int sideTarget = 280;
+//static int ultrasonicTarget = 580; // pulse width not cm
+static int ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
+
+// Variable for get_ultrasonic_range()
+static int prev_mm = 0;
+
+long integrator = 0;
+
+
+//-----------------Default motor control pins--------------
+const byte left_front = 46;
+const byte left_rear = 47;
+const byte right_rear = 50;
+const byte right_front = 51;
+//---------------------------------------------------------------------------------------------------------
+
+
+//-----------Ultrasonic pins--------------------------------------------------------
+const int TRIG_PIN = 48;
+const int ECHO_PIN = 49;
+
+// Anything over 400 cm (23200 us pulse) is "out of range".
+// Hint:If you decrease to this the ranging sensor but the timeout is short, you may not need to read up to 4meters.
+const unsigned int MAX_DIST = 23200;
+//--------------------------------------------------------------------------------------------------------------
+
+//----------------------Servo Objects---------------------------------------------------------------------------
+Servo left_font_motor;  // create servo object to control Vex Motor Controller 29
+Servo left_rear_motor;  // create servo object to control Vex Motor Controller 29
+Servo right_rear_motor;  // create servo object to control Vex Motor Controller 29
+Servo right_font_motor;  // create servo object to control Vex Motor Controller 29
+Servo turret_motor;
+//-----------------------------------------------------------------------------------------------------------
+
+
+//Serial Pointer
+HardwareSerial *SerialCom;
+
+int pos = 0;
+void setup(void)
 {
-  // Returns distances in cm from short IR sensor GP2Y0A41SK0F
-  // 5V
-  // Adapted from https://www.smart-prototyping.com/blog/Sharp-Distance-Measuring-Sensor-GP2Y0A41SK0F-Tutorial
-  int distance;
+  turret_motor.attach(11);
+  pinMode(LED_BUILTIN, OUTPUT);
 
-  float volts = SIDE_1_READING * 0.0048828125; // value from sensor * (5/1024)
-  
-  distance = 13*pow(volts,-1); //side 1 distance in cm in d[0]
+  // The Trigger pin will tell the sensor to range find
+  pinMode(TRIG_PIN, OUTPUT);
+  digitalWrite(TRIG_PIN, LOW);
+
+  // Setup the Serial port and pointer, the pointer allows switching the debug info through the USB port(Serial) or Bluetooth port(Serial1) with ease.
+  SerialCom = &Serial;
+  SerialCom->begin(115200);
+  SerialCom->println("Setup....");
+  SerialCom->println("PID init....");
 
 
-  return distance;
+
+
+
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  delay(1000); //settling time but no really needed
+
 }
 
-int get_ir_2()
+void loop(void)
 {
-  // Returns distances in cm from short IR sensor GP2Y0A41SK0F
-  // 5V
-  // Adapted from https://www.smart-prototyping.com/blog/Sharp-Distance-Measuring-Sensor-GP2Y0A41SK0F-Tutorial
-  int distance;
+  static STATE machine_state = INITIALISING;
 
-  float volts = SIDE_2_READING * 0.0048828125; // value from sensor * (5/1024)
-  
-  distance = 13*pow(volts,-1); //side 1 distance in cm in d[0]
-
-
-  return distance;
+  switch (machine_state) {
+    case INITIALISING:
+      machine_state = initialising();
+      break;
+    case RUNNING: //includes Lipo Battery check
+      machine_state =  running();
+      break;
+    case STOPPED: //Stop of Lipo Battery voltage is too low, to protect Battery
+      machine_state =  stopped();
+      break;
+  };
 }
 
-void disable_motors()
-{
-  left_font_motor.detach();  // detach the servo on pin left_front to turn Vex Motor Controller 29 Off
-  left_rear_motor.detach();  // detach the servo on pin left_rear to turn Vex Motor Controller 29 Off
-  right_rear_motor.detach();  // detach the servo on pin right_rear to turn Vex Motor Controller 29 Off
-  right_font_motor.detach();  // detach the servo on pin right_front to turn Vex Motor Controller 29 Off
 
-  pinMode(left_front, INPUT);
-  pinMode(left_rear, INPUT);
-  pinMode(right_rear, INPUT);
-  pinMode(right_front, INPUT);
+//--------------- MACHINE STATES------------------------------
+
+STATE initialising() {
+  //initialising
+  SerialCom->println("INITIALISING....");
+  SerialCom->println("Enabling Motors...");
+  enable_motors();
+  SerialCom->println("ADJUSTMENT STATE...");
+  return RUNNING;
 }
 
-void enable_motors()
-{
-  left_font_motor.attach(left_front);  // attaches the servo on pin left_front to turn Vex Motor Controller 29 On
-  left_rear_motor.attach(left_rear);  // attaches the servo on pin left_rear to turn Vex Motor Controller 29 On
-  right_rear_motor.attach(right_rear);  // attaches the servo on pin right_rear to turn Vex Motor Controller 29 On
-  right_font_motor.attach(right_front);  // attaches the servo on pin right_front to turn Vex Motor Controller 29 On
-}
 
-void stop() 
-{
-  left_font_motor.writeMicroseconds(1500);
-  left_rear_motor.writeMicroseconds(1500);
-  right_rear_motor.writeMicroseconds(1500);
-  right_font_motor.writeMicroseconds(1500);
-}
+STATE running() {
 
-bool align()
-{
+  static unsigned long previous_millis_1;
+  static unsigned long previous_millis_2;
+  static int movement_state = 1;
+  static bool movement_complete = false;
 
-  //moves side closest to wall outwards to prevent collision
-  int sideMeasurement;
-  if(SIDE_1_READING > SIDE_2_READING){
-    sideMeasurement = SIDE_1_READING;
+
+  fast_flash_double_LED_builtin();
+
+  //-----------------MOVEMENT STATE MACHINE---------------------
+  if (millis() - previous_millis_1 > SAMPLING_TIME) {
+    SerialCom ->print("movement state = ");
+    SerialCom->println(movement_state);
+    previous_millis_1 = millis();
+    SerialCom->print("count = ");
+    SerialCom->println(count);
+
+    update_angle();
+
+    if (movement_state == 0) {
+      stop();
+      return STOPPED;
+    }
+
+    else if (movement_state == 1) {
+      movement_complete = align();
+      if (movement_complete) {
+        movement_state = 2;
+      }
+      else if (!movement_complete) {
+        movement_state = 1;
+      }
+    }
+
+    else if (movement_state == 2) {
+      movement_complete = forward();
+      if (movement_complete) {
+        movement_state = 3;
+      }
+      else if (!movement_complete) {
+        movement_state = 2;
+      }
+    }
+
+    else if (movement_state == 3) {
+      movement_complete = cw();
+      if (movement_complete && count != 3) {
+        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
+        //        movement_state = 1;
+        count++;
+      }
+      else if (movement_complete && count == 3) {
+        movement_state = 0;
+      }
+      else if (!movement_complete && count != 3) {
+        movement_state = 3;
+      }
+    }
+
   }
-  else{
-    sideMeasurement = SIDE_2_READING;
-  }
 
-  int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
-  int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING);
 
-#if DISP_READINGS
-  SerialCom->print("SIDE_1_READING - SIDE_2_READING = ");
-  SerialCom->println(SIDE_1_READING - SIDE_2_READING);
-  SerialCom->print("side_orientation_correction = ");
-  SerialCom->println(side_orientation_correction);
-  SerialCom->print("side_distance_correction = ");
-  SerialCom->println(side_distance_correction);
+  if (millis() - previous_millis_2 > 500) {
+    previous_millis_2 = millis();
+    SerialCom->println("RUNNING---------");
+
+#ifndef NO_BATTERY_V_OK
+    if (!is_battery_voltage_OK()) return STOPPED;
 #endif
 
-  left_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
-  left_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
-  right_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
-  right_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
 
-  if (abs(SIDE_1_READING - SIDE_2_READING) - 10 < 10 && abs(sideTarget - SIDE_1_READING) < 5 ) {
-    return true;  // movement complete
-  }
-  else {
-    return false;  //movement imcomplete
+    turret_motor.write(pos);
+    if (pos == 0)
+    {
+      pos = 45;
+    }
+    else
+    {
+      pos = 0;
+    }
   }
 
+  return RUNNING;
 }
 
-bool forward()
-{
-  
-  //moves side closest to wall outwards to prevent collision
-  int sideMeasurement;
-  if(SIDE_1_READING > SIDE_2_READING){
-    sideMeasurement = SIDE_1_READING;
-  }
-  else{
-    sideMeasurement = SIDE_2_READING;
-  }
-  
-  int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
-  int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
-  int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+
+//Stop of Lipo Battery voltage is too low, to protect Battery
+STATE stopped() {
+  static byte counter_lipo_voltage_ok;
+  static unsigned long previous_millis;
+  int Lipo_level_cal;
+  count = 0;
+  disable_motors();
+  slow_flash_LED_builtin();
+
+  if (millis() - previous_millis > 500) { //print massage every 500ms
+    previous_millis = millis();
+    SerialCom->println("STOPPED---------");
 
 
-  
-#if DISP_READINGS
-  SerialCom->print("SIDE_1_READING - SIDE_2_READING = ");
-  SerialCom->println(SIDE_1_READING - SIDE_2_READING);
-  SerialCom->print("side_orientation_correction = ");
-  SerialCom->println(side_orientation_correction);
-  SerialCom->print("side_distance_correction = ");
-  SerialCom->println(side_distance_correction);
-  SerialCom->print("ultrasonic reading = ");
-  SerialCom->println(get_ultrasonic_range());
-  
+
+    gyro_reading();
+    side_reading();
+    ultrasonic_reading();
+
+
+#ifndef NO_BATTERY_V_OK
+    //500ms timed if statement to check lipo and output speed settings
+    if (is_battery_voltage_OK()) {
+      SerialCom->print("Lipo OK waiting of voltage Counter 10 < ");
+      SerialCom->println(counter_lipo_voltage_ok);
+      counter_lipo_voltage_ok++;
+      if (counter_lipo_voltage_ok > 10) { //Making sure lipo voltage is stable
+        counter_lipo_voltage_ok = 0;
+        enable_motors();
+        SerialCom->println("Lipo OK returning to RUN STATE");
+        return RUNNING;
+      }
+    } else
+    {
+      counter_lipo_voltage_ok = 0;
+    }
 #endif
-
-  left_font_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction - side_distance_correction);
-  left_rear_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction + side_distance_correction);
-  right_rear_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction + side_distance_correction);
-  right_font_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction - side_distance_correction);
-
-  if (abs(SIDE_1_READING - SIDE_2_READING) < 10 && abs(sideTarget - SIDE_1_READING) < 5 && abs(ultrasonicTarget - get_ultrasonic_range()) < 10) {
-    return true;  // movement complete
   }
-  else {
-    return false;  //movement imcomplete
-  }
-}
-
-void reverse ()
-{
- //moves side closest to wall outwards to prevent collision
-  int sideMeasurement;
-  if(SIDE_1_READING > SIDE_2_READING){
-    sideMeasurement = SIDE_1_READING;
-  }
-  else{
-    sideMeasurement = SIDE_2_READING;
-  }
-  
-  int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
-  int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
-  int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
-
-
-  
-#if DISP_READINGS
-  SerialCom->print("SIDE_1_READING - SIDE_2_READING = ");
-  SerialCom->println(SIDE_1_READING - SIDE_2_READING);
-  SerialCom->print("side_orientation_correction = ");
-  SerialCom->println(side_orientation_correction);
-  SerialCom->print("side_distance_correction = ");
-  SerialCom->println(side_distance_correction);
-  SerialCom->print("ultrasonic reading = ");
-  SerialCom->println(get_ultrasonic_range());
-#endif
-
-  left_font_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction - side_distance_correction);
-  left_rear_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction + side_distance_correction);
-  right_rear_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction + side_distance_correction);
-  right_font_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction - side_distance_correction);
-
-}
-
-bool ccw ()
-{
-  //empty
-}
-
-bool cw ()
-{
-  
-  int angular_displacement = integrate(currentAngle);
-  int gyro_corr = gyro_PID.PID_update(GYRO_TARGET_ANGLE, angular_displacement); // target, measuremet);
-  //int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
-  //int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
-  left_font_motor.writeMicroseconds(1500 - gyro_corr);
-  left_rear_motor.writeMicroseconds(1500 - gyro_corr);
-  right_rear_motor.writeMicroseconds(1500 - gyro_corr);
-  right_font_motor.writeMicroseconds(1500 - gyro_corr);
-
-/// Uncomment this if the robot is turning the other way OR change GYRO_TARGET_ANGLE
-//  left_font_motor.writeMicroseconds(1500 + gyro_corr);
-//  left_rear_motor.writeMicroseconds(1500 + gyro_corr);
-//  right_rear_motor.writeMicroseconds(1500 + gyro_corr);
-//  right_font_motor.writeMicroseconds(1500 + gyro_corr);
-
-  SerialCom->print("gyro: ");
-  SerialCom->println(currentAngle);
-
-  if (abs(currentAngle - GYRO_TARGET_ANGLE) < 10) {
-    integrator = 0;
-    return true;
-  }
-  else {
-    return false;
-  }
-    
-}
-
-void strafe_left ()
-{
-  int speed_val = 100;  
-  left_font_motor.writeMicroseconds(1500 - speed_val);
-  left_rear_motor.writeMicroseconds(1500 + speed_val);
-  right_rear_motor.writeMicroseconds(1500 + speed_val);
-  right_font_motor.writeMicroseconds(1500 - speed_val);
-}
-
-void strafe_right ()
-{
-  int speed_val = 100;  
-  left_font_motor.writeMicroseconds(1500 + speed_val);
-  left_rear_motor.writeMicroseconds(1500 - speed_val);
-  right_rear_motor.writeMicroseconds(1500 - speed_val);
-  right_font_motor.writeMicroseconds(1500 + speed_val);
-}
-
-int integrate(int val) {
-  //static long integrator = 0;
-  integrator += val;
-  return integrator;
+  return STOPPED;
 }
