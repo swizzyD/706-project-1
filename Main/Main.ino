@@ -10,8 +10,10 @@
     Turnigy nano-tech 2200mah 2S https://hobbyking.com/en_us/turnigy-nano-tech-2200mah-2s-25-50c-lipo-pack.html
 */
 
+#include <math.h>
 #include <Servo.h>  //Need for Servo pulse output
 #include "PID_class.h"
+
 
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 #define DISP_READINGS 1
@@ -20,6 +22,12 @@
 #define SIDE_1_READING analogRead(A4)
 #define SIDE_2_READING analogRead(A6)
 
+#define GYRO_TARGET_ANGLE 270
+#define ULTRASONIC_MOVE_THRESH 25
+
+static int count = 0;
+
+
 //machine states
 enum STATE {
   INITIALISING,
@@ -27,19 +35,37 @@ enum STATE {
   STOPPED
 };
 
+//-------------------------------------------GYRO VARIABLES--------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int sensorValue = 0;            // read out value of sensor
+float gyroSupplyVoltage = 5;    // supply voltage for gyro
+float gyroZeroVoltage = 0;      // the value of voltage when gyro is zero
+float gyroSensitivity = 0.007;  // gyro sensitivity unit is (v/degree/second) get from datasheet
+float rotationThreshold = 1.5;  // because of gyro drifting, defining rotation angular velocity  less than                                                        // this value will not be ignored
+float gyroRate = 0;             // read out value of sensor in voltage
+float currentAngle = 0;         // current angle calculated by angular velocity integral on
+
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
-PID gyro_PID(3.0f, 0.01f, 0.0f, -200, 200);
+PID gyro_PID(0.5f, 0.01f, 0.0f, -200, 200);
 PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
 PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
-PID Ultrasonic_PID(0.03f, 0.001f, 0.0f, -200, 200);
+PID Ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
+
+PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
+PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
+
 
 static int turnTarget = 20000;
 static int sideTarget = 280;
-static int ultrasonicTarget = 580; // pulse width not cm
+//static int ultrasonicTarget = 580; // pulse width not cm
+static int ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
-//------------------------------------------------------------------------------
+// Variable for get_ultrasonic_range()
+static int prev_mm = 0;
+
+long integrator = 0;
 
 
 //-----------------Default motor control pins--------------
@@ -87,6 +113,15 @@ void setup(void)
   SerialCom->println("Setup....");
   SerialCom->println("PID init....");
 
+
+
+
+
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
   delay(1000); //settling time but no really needed
 
 }
@@ -116,7 +151,7 @@ STATE initialising() {
   SerialCom->println("INITIALISING....");
   SerialCom->println("Enabling Motors...");
   enable_motors();
-  SerialCom->println("RUNNING STATE...");
+  SerialCom->println("ADJUSTMENT STATE...");
   return RUNNING;
 }
 
@@ -127,7 +162,7 @@ STATE running() {
   static unsigned long previous_millis_2;
   static int movement_state = 1;
   static bool movement_complete = false;
-  static int count = 0;
+
 
   fast_flash_double_LED_builtin();
 
@@ -136,6 +171,10 @@ STATE running() {
     SerialCom ->print("movement state = ");
     SerialCom->println(movement_state);
     previous_millis_1 = millis();
+    SerialCom->print("count = ");
+    SerialCom->println(count);
+
+    update_angle();
 
     if (movement_state == 0) {
       stop();
@@ -165,7 +204,8 @@ STATE running() {
     else if (movement_state == 3) {
       movement_complete = cw();
       if (movement_complete && count != 3) {
-        movement_state = 2;
+        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
+        //        movement_state = 1;
         count++;
       }
       else if (movement_complete && count == 3) {
@@ -175,11 +215,11 @@ STATE running() {
         movement_state = 3;
       }
     }
-    
+
   }
 
 
-  if (millis() - previous_millis_2 > 500) {  
+  if (millis() - previous_millis_2 > 500) {
     previous_millis_2 = millis();
     SerialCom->println("RUNNING---------");
 
@@ -208,12 +248,15 @@ STATE stopped() {
   static byte counter_lipo_voltage_ok;
   static unsigned long previous_millis;
   int Lipo_level_cal;
+  count = 0;
   disable_motors();
   slow_flash_LED_builtin();
 
   if (millis() - previous_millis > 500) { //print massage every 500ms
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
+
+
 
     gyro_reading();
     side_reading();
