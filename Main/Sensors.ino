@@ -1,11 +1,11 @@
 int get_ultrasonic_range()
 {
   long duration, mm;
-  
+
   // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
   // Clearing the trig pin
-  digitalWrite(TRIG_PIN,LOW);
+  digitalWrite(TRIG_PIN, LOW);
   delayMicroseconds(2);
   // pulsing high for at least 10 microseconds
   digitalWrite(TRIG_PIN, HIGH);
@@ -19,18 +19,18 @@ int get_ultrasonic_range()
   pinMode(ECHO_PIN, INPUT);
   duration = pulseIn(ECHO_PIN, HIGH);
 
-  
+
   // Convert the time into a distance
   mm = (duration / 2.0) / 2.91;
 
-//  // Rejecting out of range values and jitter
-//  // Recursively calling get_ultrasonic_range() until mm is a valid value
-//  if ((mm > 4000) || (abs(prev_mm - mm) >  ULTRASONIC_MOVE_THRESH)) {
-//    mm = get_ultrasonic_range();
-//  }
+  //  // Rejecting out of range values and jitter
+  //  // Recursively calling get_ultrasonic_range() until mm is a valid value
+  //  if ((mm > 4000) || (abs(prev_mm - mm) >  ULTRASONIC_MOVE_THRESH)) {
+  //    mm = get_ultrasonic_range();
+  //  }
 
   prev_mm = mm;
-  
+
   return mm;
 }
 
@@ -41,8 +41,8 @@ double get_ir_1()
   // Adapted from https://www.smart-prototyping.com/blog/Sharp-Distance-Measuring-Sensor-GP2Y0A41SK0F-Tutorial
   double distance;
   double volts = SIDE_1_READING * 0.0048828125; // value from sensor * (5/1024)
-  
-  distance = 13*pow(volts,-1); //side 1 distance in cm in d[0]
+
+  distance = 13 * pow(volts, -1); //side 1 distance in cm in d[0]
 
   return distance;
 }
@@ -54,8 +54,8 @@ double get_ir_2()
   // Adapted from https://www.smart-prototyping.com/blog/Sharp-Distance-Measuring-Sensor-GP2Y0A41SK0F-Tutorial
   double distance;
   double volts = SIDE_2_READING * 0.0048828125; // value from sensor * (5/1024)
-  
-  distance = 13*pow(volts,-1); //side 1 distance in cm in d[0]
+
+  distance = 13 * pow(volts, -1); //side 1 distance in cm in d[0]
 
   return distance;
 }
@@ -81,7 +81,7 @@ void gyro_reading()
   SerialCom->println(GYRO_READING);
 }
 
-void gyro_setup(){
+void gyro_setup() {
   int i;
   float sum = 0;
   SerialCom->println("gyro setup");
@@ -100,24 +100,29 @@ void gyro_setup(){
 void update_angle()
 {
   // convert the 0-1023 signal to 0-5v
-  gyroRate = (GYRO_READING * gyroSupplyVoltage) / 1023; 
+  gyroRate = (GYRO_READING * gyroSupplyVoltage) / 1023;
   // find the voltage offset the value of voltage when gyro is zero (still)
-  gyroRate -= (gyroZeroVoltage / 1023 * 5); 
-  // read out voltage divided the gyro sensitivity to calculate the angular velocity
-  float angularVelocity = gyroRate / gyroSensitivity; 
-  // if the angular velocity is less than the threshold, ignore it
-  if (abs(angularVelocity) > rotationThreshold) { // we are running a loop in T. one second will run (1000/T).
+  gyroRate -= (gyroZeroVoltage / 1023 * 5);
+
+  float angularVelocity = gyroRate / gyroSensitivity;
+
+  if (abs(angularVelocity) > rotationThreshold) {
     float angleChange = angularVelocity / (1000 / SAMPLING_TIME);
     currentAngle -= angleChange;
-  }  // keep the angle between 0-360
+  }
+
+  // keep the angle between 0-360
   if (currentAngle < 0)    {
     currentAngle += 360;
   }  else if (currentAngle > 359) {
     currentAngle -= 360;
-  } 
+  }
+  
+#if DISP_READINGS
   SerialCom->print("Angular Velocity: ");
   SerialCom->print(angularVelocity);
   SerialCom->print(" Current Angle: ");
-  SerialCom->println(currentAngle); 
+  SerialCom->println(currentAngle);
+#endif
 
 }
