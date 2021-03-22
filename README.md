@@ -41,5 +41,28 @@
     * mount IR + Sam's code + test
     * cw function redo using gyro? IR?
     * make trashy `open loop` versions of movement functions
+    * DIST_BETWEEN_IR needs to be measured in cm
+    * SIDE_DIST_TARGET is currently 150 - 0 but zero needs to be replaced by the distance from IR sensors to centreline of robot (in cm)
+    * ultrasonic target distance needs to be changed once the sensor is mounted
+    * getting ir distances uses datasheet calculations, may need calibration
+    * improve get_ultrasonic_range code
+  * modified clockwise and counter-clockwise turning (by using angle calculations)
+  * added IR sensor reading function in 
+  
+ ## 19 Mar
+  * Sam added ultrasonic sensor code and also implemented gyro turning
+	* align robot state after rotation?
+	* Need to test and edit GYRO_TARGET_ANGLE and ULTRASONIC_MOVE_THRESH
+	* maybe run gyro calibration after every turn?
 
+## 22 Mar
+  * ultrasonic works, just need calibrate
+  * angle integrator static local variable remove count
+    
+	
 
+  
+  
+
+  
+  

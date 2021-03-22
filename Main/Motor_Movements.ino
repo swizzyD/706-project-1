@@ -1,3 +1,4 @@
+//The Vex Motor Controller 29 use Servo Control signals to determine speed and direction, with 0 degrees meaning neutral https://en.wikipedia.org/wiki/Servo_control
 
 void disable_motors()
 {
@@ -28,7 +29,6 @@ void stop()
   right_font_motor.writeMicroseconds(1500);
 }
 
-
 bool align()
 {
 
@@ -40,7 +40,7 @@ bool align()
   else{
     sideMeasurement = SIDE_2_READING;
   }
-  
+
   int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING);
 
@@ -69,7 +69,7 @@ bool align()
 
 bool forward()
 {
-
+  
   //moves side closest to wall outwards to prevent collision
   int sideMeasurement;
   if(SIDE_1_READING > SIDE_2_READING){
@@ -81,7 +81,7 @@ bool forward()
   
   int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
-  int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+  int speed_val = ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
 
 
   
@@ -94,6 +94,7 @@ bool forward()
   SerialCom->println(side_distance_correction);
   SerialCom->print("ultrasonic reading = ");
   SerialCom->println(get_ultrasonic_range());
+  
 #endif
 
   left_font_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction - side_distance_correction);
@@ -122,7 +123,7 @@ void reverse ()
   
   int side_distance_correction = side_distance_PID.PID_update(sideTarget, sideMeasurement); // target, measuremet);
   int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
-  int speed_val = Ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+  int speed_val = ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
 
 
   
@@ -144,30 +145,39 @@ void reverse ()
 
 }
 
-void ccw ()
+bool ccw ()
 {
-  int speed_val = 100;  
-  left_font_motor.writeMicroseconds(1500 - speed_val);
-  left_rear_motor.writeMicroseconds(1500 - speed_val);
-  right_rear_motor.writeMicroseconds(1500 - speed_val);
-  right_font_motor.writeMicroseconds(1500 - speed_val);
+  //empty
 }
 
-int cw ()
+bool cw ()
 {
-  int angular_displacement = integrator(GYRO_READING - 499);
-  int turning_val = gyro_PID.PID_update(angular_displacement, turnTarget);
-  left_font_motor.writeMicroseconds(1500 - turning_val);
-  left_rear_motor.writeMicroseconds(1500 - turning_val);
-  right_rear_motor.writeMicroseconds(1500 - turning_val);
-  right_font_motor.writeMicroseconds(1500 - turning_val);
+  update_angle();
+  int angular_displacement = integrate(currentAngle);
+  int gyro_corr = gyro_PID.PID_update(GYRO_TARGET_ANGLE, angular_displacement); // target, measuremet);
+  //int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
+  //int speed_val = ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+  left_font_motor.writeMicroseconds(1500 - gyro_corr);
+  left_rear_motor.writeMicroseconds(1500 - gyro_corr);
+  right_rear_motor.writeMicroseconds(1500 - gyro_corr);
+  right_font_motor.writeMicroseconds(1500 - gyro_corr);
 
-  if (abs(angular_displacement - turnTarget) < 100) {
+/// Uncomment this if the robot is turning the other way OR change GYRO_TARGET_ANGLE
+//  left_font_motor.writeMicroseconds(1500 + gyro_corr);
+//  left_rear_motor.writeMicroseconds(1500 + gyro_corr);
+//  right_rear_motor.writeMicroseconds(1500 + gyro_corr);
+//  right_font_motor.writeMicroseconds(1500 + gyro_corr);
+
+  SerialCom->print("gyro: ");
+  SerialCom->println(currentAngle);
+
+  if (abs(currentAngle - GYRO_TARGET_ANGLE) < 5) {
     return true;
   }
   else {
     return false;
   }
+    
 }
 
 void strafe_left ()
@@ -188,7 +198,7 @@ void strafe_right ()
   right_font_motor.writeMicroseconds(1500 + speed_val);
 }
 
-int integrator(int val) {
+int integrate(int val) {
   static long integrator = 0;
   integrator += val;
   return integrator;
