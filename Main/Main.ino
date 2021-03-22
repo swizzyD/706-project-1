@@ -45,12 +45,16 @@ static float gyroRate = 0;             // read out value of sensor in voltage
 static float currentAngle = 0;         // current angle calculated by angular velocity integral on
 
 
+
+
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
 PID gyro_PID(0.5f, 0.01f, 0.0f, -200, 200);
-PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
-PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
+PID side_distance_PID(1.5f, 0.01f, 0.0f, -200, 200);
+PID side_orientation_PID(2.5f, 0.005f, 0.0f, -200, 200);
 PID ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
+
+
 
 PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
 PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
@@ -160,7 +164,7 @@ STATE running() {
     SerialCom->print("count = ");
     SerialCom->println(count);
 
-    update_angle();
+    //update_angle();
 
     if (movement_state == 0) {
       // STOP STATE
@@ -182,17 +186,29 @@ STATE running() {
     else if (movement_state == 2) {
       // FORWARD STATE
       movement_complete = forward();   
-      if (movement_complete) {
-        gyro_setup();
+//      if (movement_complete) {
+//        currentAngle = 0;
+//        movement_state = 3;
+//      }
+//      else if (!movement_complete) {
+//        movement_state = 2;
+//      }
+
+      if (movement_complete && count != 3) {
+        currentAngle = 0;
         movement_state = 3;
       }
-      else if (!movement_complete) {
+      else if (movement_complete && count == 3) {
+        movement_state = 0;
+      }
+      else if (!movement_complete && count != 3) {
         movement_state = 2;
       }
     }
 
     else if (movement_state == 3) {
       // TURNING CW STATE
+      update_angle();
       movement_complete = cw();
 //      if (movement_complete && count != 3) {
 //        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
@@ -206,16 +222,26 @@ STATE running() {
 //        movement_state = 3;
 //      }
 
+        if (movement_complete && count != 3) {
+          movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
+          //        movement_state = 1;
+          count++;
+        }
+        else if (!movement_complete && count != 3) {
+          movement_state = 3;
+        }
 
-      if (movement_complete) {
-        // Moving forward after turning
-        movement_state = 2;
-      }
 
-      else if (movement_complete) { // && (FINISHED COURSE)
-        // STOP if FINISHED COURSE
-        movement_state = 0;
-      }
+//      if (movement_complete) {
+//        // Moving forward after turning
+//        //gyro_target_angle += 90;
+//        movement_state = 2;
+//      }
+//
+//      else if (movement_complete) { // && (FINISHED COURSE)
+//        // STOP if FINISHED COURSE
+//        movement_state = 0;
+//      }
     }
 
   }

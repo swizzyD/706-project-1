@@ -99,6 +99,7 @@ void gyro_setup(){
 
 void update_angle()
 {
+
   // convert the 0-1023 signal to 0-5v
   gyroRate = (GYRO_READING * gyroSupplyVoltage) / 1023; 
   // find the voltage offset the value of voltage when gyro is zero (still)
@@ -106,7 +107,7 @@ void update_angle()
   // read out voltage divided the gyro sensitivity to calculate the angular velocity
   float angularVelocity = gyroRate / gyroSensitivity; 
   // if the angular velocity is less than the threshold, ignore it
-  if (abs(angularVelocity) > rotationThreshold) { // we are running a loop in T. one second will run (1000/T).
+  if (abs(angularVelocity) >= rotationThreshold) { // we are running a loop in T. one second will run (1000/T).
     float angleChange = angularVelocity / (1000 / SAMPLING_TIME);
     currentAngle -= angleChange;
   }  // keep the angle between 0-360
@@ -115,6 +116,8 @@ void update_angle()
   }  else if (currentAngle > 359) {
     currentAngle -= 360;
   } 
+
+
   SerialCom->print("Angular Velocity: ");
   SerialCom->print(angularVelocity);
   SerialCom->print(" Current Angle: ");
