@@ -106,6 +106,8 @@ void setup(void)
   SerialCom->begin(115200);
   SerialCom->println("Setup....");
   SerialCom->println("PID init....");
+
+  
   delay(1000); //settling time but no really needed
 }
 
@@ -134,6 +136,7 @@ STATE initialising() {
   SerialCom->println("INITIALISING....");
   SerialCom->println("Enabling Motors...");
   enable_motors();
+  gyro_setup();
   SerialCom->println("ADJUSTMENT STATE...");
   return RUNNING;
 }
@@ -160,11 +163,13 @@ STATE running() {
     update_angle();
 
     if (movement_state == 0) {
+      // STOP STATE
       stop();
       return STOPPED;
     }
 
     else if (movement_state == 1) {
+      // ALGINING STATE
       movement_complete = align();
       if (movement_complete) {
         movement_state = 2;
@@ -175,8 +180,10 @@ STATE running() {
     }
 
     else if (movement_state == 2) {
-      movement_complete = forward();
+      // FORWARD STATE
+      movement_complete = forward();   
       if (movement_complete) {
+        gyro_setup();
         movement_state = 3;
       }
       else if (!movement_complete) {
@@ -185,17 +192,29 @@ STATE running() {
     }
 
     else if (movement_state == 3) {
+      // TURNING CW STATE
       movement_complete = cw();
-      if (movement_complete && count != 3) {
-        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
-        //        movement_state = 1;
-        count++;
+//      if (movement_complete && count != 3) {
+//        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
+//        //        movement_state = 1;
+//        count++;
+//      }
+//      else if (movement_complete && count == 3) {
+//        movement_state = 0;
+//      }
+//      else if (!movement_complete && count != 3) {
+//        movement_state = 3;
+//      }
+
+
+      if (movement_complete) {
+        // Moving forward after turning
+        movement_state = 2;
       }
-      else if (movement_complete && count == 3) {
+
+      else if (movement_complete) { // && (FINISHED COURSE)
+        // STOP if FINISHED COURSE
         movement_state = 0;
-      }
-      else if (!movement_complete && count != 3) {
-        movement_state = 3;
       }
     }
 
@@ -239,7 +258,7 @@ STATE stopped() {
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
 
-    gyro_reading();
+    update_angle();
     side_reading();
     ultrasonic_reading();
 
