@@ -1,6 +1,5 @@
 int get_ultrasonic_range()
 {
-
   long duration, mm;
   
   // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
@@ -32,10 +31,34 @@ int get_ultrasonic_range()
 
   prev_mm = mm;
   
-  
   return mm;
 }
 
+double get_ir_1()
+{
+  // Returns distances in cm from short IR sensor GP2Y0A41SK0F
+  // 5V
+  // Adapted from https://www.smart-prototyping.com/blog/Sharp-Distance-Measuring-Sensor-GP2Y0A41SK0F-Tutorial
+  double distance;
+  double volts = SIDE_1_READING * 0.0048828125; // value from sensor * (5/1024)
+  
+  distance = 13*pow(volts,-1); //side 1 distance in cm in d[0]
+
+  return distance;
+}
+
+double get_ir_2()
+{
+  // Returns distances in cm from short IR sensor GP2Y0A41SK0F
+  // 5V
+  // Adapted from https://www.smart-prototyping.com/blog/Sharp-Distance-Measuring-Sensor-GP2Y0A41SK0F-Tutorial
+  double distance;
+  double volts = SIDE_2_READING * 0.0048828125; // value from sensor * (5/1024)
+  
+  distance = 13*pow(volts,-1); //side 1 distance in cm in d[0]
+
+  return distance;
+}
 
 
 void side_reading()
@@ -61,7 +84,7 @@ void gyro_reading()
 void gyro_setup(){
   int i;
   float sum = 0;
-  Serial.println("gyro setup");
+  SerialCom->println("gyro setup");
   for (i = 0; i < 100; i++)     //  read 100 values of voltage when gyro is at still, to calculate the zero-drift
   {
     sum += GYRO_READING;
@@ -69,8 +92,8 @@ void gyro_setup(){
   delay(5);
 
   gyroZeroVoltage = sum / 100;  // average the sum as the zero drifting
-  Serial.print("Zero Voltage: ");
-  Serial.println(gyroZeroVoltage);
+  SerialCom->print("Zero Voltage: ");
+  SerialCom->println(gyroZeroVoltage);
 }
 
 
@@ -92,9 +115,9 @@ void update_angle()
   }  else if (currentAngle > 359) {
     currentAngle -= 360;
   } 
-  Serial.print("Angular Velocity: ");
-  Serial.print(angularVelocity);
-  Serial.print(" Current Angle: ");
-  Serial.println(currentAngle); 
+  SerialCom->print("Angular Velocity: ");
+  SerialCom->print(angularVelocity);
+  SerialCom->print(" Current Angle: ");
+  SerialCom->println(currentAngle); 
 
 }

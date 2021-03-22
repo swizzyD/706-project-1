@@ -16,6 +16,7 @@
 
 
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
+
 #define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
 #define GYRO_READING analogRead(A3)
@@ -36,14 +37,12 @@ enum STATE {
 };
 
 //-------------------------------------------GYRO VARIABLES--------------------------------------------------------
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int sensorValue = 0;            // read out value of sensor
-float gyroSupplyVoltage = 5;    // supply voltage for gyro
-float gyroZeroVoltage = 0;      // the value of voltage when gyro is zero
-float gyroSensitivity = 0.007;  // gyro sensitivity unit is (v/degree/second) get from datasheet
-float rotationThreshold = 1.5;  // because of gyro drifting, defining rotation angular velocity  less than                                                        // this value will not be ignored
-float gyroRate = 0;             // read out value of sensor in voltage
-float currentAngle = 0;         // current angle calculated by angular velocity integral on
+static float gyroSupplyVoltage = 5;    // supply voltage for gyro
+static float gyroZeroVoltage = 0;      // the value of voltage when gyro is zero
+static float gyroSensitivity = 0.007;  // gyro sensitivity unit is (v/degree/second) get from datasheet
+static float rotationThreshold = 1.5;  // because of gyro drifting, defining rotation angular velocity  less than                                                        // this value will not be ignored
+static float gyroRate = 0;             // read out value of sensor in voltage
+static float currentAngle = 0;         // current angle calculated by angular velocity integral on
 
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
@@ -56,17 +55,12 @@ PID ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
 PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
 PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
 
-
-static int turnTarget = 20000;
 static int sideTarget = 280;
 //static int ultrasonicTarget = 580; // pulse width not cm
-static int ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
+static double ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
 // Variable for get_ultrasonic_range()
 static int prev_mm = 0;
-
-long integrator = 0;
-
 
 //-----------------Default motor control pins--------------
 const byte left_front = 46;
@@ -112,18 +106,7 @@ void setup(void)
   SerialCom->begin(115200);
   SerialCom->println("Setup....");
   SerialCom->println("PID init....");
-
-
-
-
-
-
-
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
   delay(1000); //settling time but no really needed
-
 }
 
 void loop(void)
@@ -255,8 +238,6 @@ STATE stopped() {
   if (millis() - previous_millis > 500) { //print massage every 500ms
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
-
-
 
     gyro_reading();
     side_reading();

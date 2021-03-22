@@ -1,39 +1,5 @@
 //The Vex Motor Controller 29 use Servo Control signals to determine speed and direction, with 0 degrees meaning neutral https://en.wikipedia.org/wiki/Servo_control
 
-static double Tr = 0; //ramp time ms
-
-
-
-int get_ir_1()
-{
-  // Returns distances in cm from short IR sensor GP2Y0A41SK0F
-  // 5V
-  // Adapted from https://www.smart-prototyping.com/blog/Sharp-Distance-Measuring-Sensor-GP2Y0A41SK0F-Tutorial
-  int distance;
-
-  float volts = SIDE_1_READING * 0.0048828125; // value from sensor * (5/1024)
-  
-  distance = 13*pow(volts,-1); //side 1 distance in cm in d[0]
-
-
-  return distance;
-}
-
-int get_ir_2()
-{
-  // Returns distances in cm from short IR sensor GP2Y0A41SK0F
-  // 5V
-  // Adapted from https://www.smart-prototyping.com/blog/Sharp-Distance-Measuring-Sensor-GP2Y0A41SK0F-Tutorial
-  int distance;
-
-  float volts = SIDE_2_READING * 0.0048828125; // value from sensor * (5/1024)
-  
-  distance = 13*pow(volts,-1); //side 1 distance in cm in d[0]
-
-
-  return distance;
-}
-
 void disable_motors()
 {
   left_font_motor.detach();  // detach the servo on pin left_front to turn Vex Motor Controller 29 Off
@@ -186,7 +152,7 @@ bool ccw ()
 
 bool cw ()
 {
-  
+  update_angle();
   int angular_displacement = integrate(currentAngle);
   int gyro_corr = gyro_PID.PID_update(GYRO_TARGET_ANGLE, angular_displacement); // target, measuremet);
   //int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
@@ -205,8 +171,7 @@ bool cw ()
   SerialCom->print("gyro: ");
   SerialCom->println(currentAngle);
 
-  if (abs(currentAngle - GYRO_TARGET_ANGLE) < 10) {
-    integrator = 0;
+  if (abs(currentAngle - GYRO_TARGET_ANGLE) < 5) {
     return true;
   }
   else {
@@ -234,7 +199,7 @@ void strafe_right ()
 }
 
 int integrate(int val) {
-  //static long integrator = 0;
+  static long integrator = 0;
   integrator += val;
   return integrator;
 }
