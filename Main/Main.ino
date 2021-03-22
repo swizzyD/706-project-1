@@ -51,7 +51,7 @@ float currentAngle = 0;         // current angle calculated by angular velocity 
 PID gyro_PID(0.5f, 0.01f, 0.0f, -200, 200);
 PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
 PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
-PID Ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
+PID ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
 
 PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
 PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
