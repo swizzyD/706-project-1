@@ -24,7 +24,7 @@
 #define SIDE_2_READING analogRead(A6)
 
 #define GYRO_TARGET_ANGLE 270
-#define ULTRASONIC_MOVE_THRESH 25
+#define ULTRASONIC_MOVE_THRESH 100
 
 static int count = 0;
 
@@ -49,10 +49,10 @@ static float currentAngle = 0;         // current angle calculated by angular ve
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
-PID gyro_PID(0.5f, 0.01f, 0.0f, -200, 200);
-PID side_distance_PID(1.5f, 0.01f, 0.0f, -200, 200);
-PID side_orientation_PID(2.5f, 0.005f, 0.0f, -200, 200);
-PID ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
+PID gyro_PID(0.3f, 0.01f, 0.0f, -200, 200);
+PID side_distance_PID(1.5f, 0.02f, 0.0f, -100, 100);
+PID side_orientation_PID(5.0f, 0.02f, 0.0f, -100, 100);
+PID ultrasonic_PID(2.0f, 0.05f, 0.0f, -300, 300);
 
 
 
@@ -163,6 +163,7 @@ STATE running() {
     previous_millis_1 = millis();
     SerialCom->print("count = ");
     SerialCom->println(count);
+    //ultrasonic_reading();
 
     //update_angle();
 
