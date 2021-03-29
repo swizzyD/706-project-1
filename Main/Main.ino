@@ -49,9 +49,9 @@ static float currentAngle = 0;         // current angle calculated by angular ve
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
-PID gyro_PID(0.3f, 0.01f, 0.0f, -200, 200);
-PID side_distance_PID(1.5f, 0.02f, 0.0f, -100, 100);
-PID side_orientation_PID(5.0f, 0.02f, 0.0f, -100, 100);
+PID gyro_PID(0.2f, 1.0f, 0.0f, -200, 200);
+PID side_distance_PID(5.0f, 0.1f, 0.0f, -100, 100);
+PID side_orientation_PID(5.0f, 0.1f, 0.001f, -100, 100);
 PID ultrasonic_PID(2.0f, 0.05f, 0.0f, -300, 300);
 
 
@@ -59,7 +59,7 @@ PID ultrasonic_PID(2.0f, 0.05f, 0.0f, -300, 300);
 PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
 PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
 
-static int sideTarget = 280;
+static int sideTarget = 300;
 //static int ultrasonicTarget = 580; // pulse width not cm
 static double ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
