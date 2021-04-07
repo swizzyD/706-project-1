@@ -24,7 +24,7 @@
 #define SIDE_2_READING analogRead(A6)
 
 #define GYRO_TARGET_ANGLE 270
-#define ULTRASONIC_MOVE_THRESH 25
+#define ULTRASONIC_MOVE_THRESH 100
 
 static int count = 0;
 
@@ -45,17 +45,22 @@ static float gyroRate = 0;             // read out value of sensor in voltage
 static float currentAngle = 0;         // current angle calculated by angular velocity integral on
 
 
+
+
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
-PID gyro_PID(0.5f, 0.01f, 0.0f, -200, 200);
-PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
-PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
-PID ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
+PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
+PID side_distance_PID(5.0f, 0.02f, 0.002f, -100, 100);
+PID side_orientation_PID(5.0f, 0.02f, 0.002f, -100, 100);
+PID ultrasonic_PID(2.0f, 0.001f, 0.0f, -300, 300);
 
-PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
-PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
+//PID gyro_PID(0.2f, 0.0f, 0.0f, -200, 200);
+//PID side_distance_PID(5.0f, 0.0f, 0.0f, -100, 100);
+//PID side_orientation_PID(5.0f, 0.0f, 0.0f, -100, 100);
+//PID ultrasonic_PID(2.0f, 0.0f, 0.0f, -200, 200);
 
-static int sideTarget = 280;
+
+static int sideTarget = 300;
 //static int ultrasonicTarget = 580; // pulse width not cm
 static double ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
@@ -106,6 +111,8 @@ void setup(void)
   SerialCom->begin(115200);
   SerialCom->println("Setup....");
   SerialCom->println("PID init....");
+
+  
   delay(1000); //settling time but no really needed
 }
 
@@ -134,6 +141,7 @@ STATE initialising() {
   SerialCom->println("INITIALISING....");
   SerialCom->println("Enabling Motors...");
   enable_motors();
+  gyro_setup();
   SerialCom->println("ADJUSTMENT STATE...");
   return RUNNING;
 }
@@ -157,14 +165,14 @@ STATE running() {
     SerialCom->print("count = ");
     SerialCom->println(count);
 
-    update_angle();
-
     if (movement_state == 0) {
+      // STOP STATE
       stop();
       return STOPPED;
     }
 
     else if (movement_state == 1) {
+      // ALGINING STATE
       movement_complete = align();
       if (movement_complete) {
         movement_state = 2;
@@ -175,28 +183,34 @@ STATE running() {
     }
 
     else if (movement_state == 2) {
-      movement_complete = forward();
-      if (movement_complete) {
-        movement_state = 3;
-      }
-      else if (!movement_complete) {
-        movement_state = 2;
-      }
-    }
+      // FORWARD STATE
+      movement_complete = forward();   
 
-    else if (movement_state == 3) {
-      movement_complete = cw();
       if (movement_complete && count != 3) {
-        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn? final pos due to gyro may not be reliable
-        //        movement_state = 1;
-        count++;
+        currentAngle = 0;
+        movement_state = 3;
       }
       else if (movement_complete && count == 3) {
         movement_state = 0;
       }
       else if (!movement_complete && count != 3) {
-        movement_state = 3;
+        movement_state = 2;
       }
+    }
+
+    else if (movement_state == 3) {
+      // TURNING CW STATE
+      update_angle();
+      movement_complete = cw();
+
+        if (movement_complete && count != 3) {
+          movement_state = 1; // Change to movement_state = 1 so that the robot aligns after the turn
+          count++;
+        }
+        else if (!movement_complete && count != 3) {
+          movement_state = 3;
+        }
+        
     }
 
   }
@@ -239,7 +253,7 @@ STATE stopped() {
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
 
-    gyro_reading();
+    update_angle();
     side_reading();
     ultrasonic_reading();
 
