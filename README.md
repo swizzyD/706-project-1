@@ -58,6 +58,10 @@
 ## 22 Mar
   * ultrasonic works, just need calibrate
   * angle integrator static local variable remove count
+  * re-implemented turn count, put count case in state 2
+  * fixed gyro turning issue, need to tune further
+  * tune IR sensor readings, add get_ir()?
+  
     
 	
 
