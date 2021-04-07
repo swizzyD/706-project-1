@@ -94,7 +94,6 @@ bool forward()
   SerialCom->println(side_distance_correction);
   SerialCom->print("ultrasonic reading = ");
   SerialCom->println(get_ultrasonic_range());
-  
 #endif
 
   left_font_motor.writeMicroseconds(1500 - speed_val - side_orientation_correction - side_distance_correction);
@@ -156,8 +155,7 @@ bool cw ()
   update_angle();
   int angular_displacement = integrate(currentAngle);
   int gyro_corr = gyro_PID.PID_update(GYRO_TARGET_ANGLE, angular_displacement); // target, measuremet);
-  //int side_orientation_correction = side_orientation_PID.PID_update(0, SIDE_1_READING - SIDE_2_READING); //difference of 15 to get robot straight, can change this
-  //int speed_val = ultrasonic_PID.PID_update(ultrasonicTarget, get_ultrasonic_range());
+
   left_font_motor.writeMicroseconds(1500 - gyro_corr);
   left_rear_motor.writeMicroseconds(1500 - gyro_corr);
   right_rear_motor.writeMicroseconds(1500 - gyro_corr);
@@ -169,8 +167,10 @@ bool cw ()
 //  right_rear_motor.writeMicroseconds(1500 + gyro_corr);
 //  right_font_motor.writeMicroseconds(1500 + gyro_corr);
 
+#if DISPLAY_READINGS
   SerialCom->print("gyro: ");
   SerialCom->println(currentAngle);
+#endif
 
   if (abs(currentAngle - GYRO_TARGET_ANGLE) < 5) {
     return true;

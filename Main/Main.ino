@@ -26,6 +26,7 @@
 #define GYRO_TARGET_ANGLE 270
 #define ULTRASONIC_MOVE_THRESH 25
 
+//turn count
 static int count = 0;
 
 
@@ -52,11 +53,7 @@ PID side_distance_PID(1.0f, 0.01f, 0.0f, -200, 200);
 PID side_orientation_PID(2.0f, 0.005f, 0.0f, -200, 200);
 PID ultrasonic_PID(0.5f, 0.001f, 0.0f, -200, 200);
 
-PID alpha_correction(1.0f, 0.0f, 0.0f, -200, 200);
-PID side_dist_corr(1.0f, 0.0f, 0.0f, -200, 200);
-
 static int sideTarget = 280;
-//static int ultrasonicTarget = 580; // pulse width not cm
 static double ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
 // Variable for get_ultrasonic_range()
@@ -130,11 +127,10 @@ void loop(void)
 //--------------- MACHINE STATES------------------------------
 
 STATE initialising() {
-  //initialising
   SerialCom->println("INITIALISING....");
   SerialCom->println("Enabling Motors...");
   enable_motors();
-  SerialCom->println("ADJUSTMENT STATE...");
+  SerialCom->println("ALIGNMENT STATE...");
   return RUNNING;
 }
 
@@ -151,12 +147,15 @@ STATE running() {
 
   //-----------------MOVEMENT STATE MACHINE---------------------
   if (millis() - previous_millis_1 > SAMPLING_TIME) {
+    
+#if DISPLAY_READINGS
     SerialCom ->print("movement state = ");
     SerialCom->println(movement_state);
-    previous_millis_1 = millis();
     SerialCom->print("count = ");
     SerialCom->println(count);
+#endif
 
+    previous_millis_1 = millis();
     update_angle();
 
     if (movement_state == 0) {
