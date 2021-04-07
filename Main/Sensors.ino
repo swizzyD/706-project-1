@@ -23,11 +23,13 @@ int get_ultrasonic_range()
   // Convert the time into a distance
   mm = (duration / 2.0) / 2.91;
 
+
   // Rejecting out of range values and jitter
   //  // Recursively calling get_ultrasonic_range() until mm is a valid value
   //  if ((mm > 4000) || (abs(prev_mm - mm) >  ULTRASONIC_MOVE_THRESH)) {
 //    mm = get_ultrasonic_range();
 //  }
+
 
   prev_mm = mm;
 
@@ -104,23 +106,27 @@ void update_angle()
   gyroRate = (GYRO_READING * gyroSupplyVoltage) / 1023;
   // find the voltage offset the value of voltage when gyro is zero (still)
   gyroRate -= (gyroZeroVoltage / 1023 * 5);
+
   // read out voltage divided the gyro sensitivity to calculate the angular velocity
   float angularVelocity = gyroRate / gyroSensitivity;
   // if the angular velocity is less than the threshold, ignore it
   if (abs(angularVelocity) >= rotationThreshold) { // we are running a loop in T. one second will run (1000/T).
+
     float angleChange = angularVelocity / (1000 / SAMPLING_TIME);
     currentAngle -= angleChange;
-  }  // keep the angle between 0-360
+  }
+
+  // keep the angle between 0-360
   if (currentAngle < 0)    {
     currentAngle += 360;
   }  else if (currentAngle > 359) {
     currentAngle -= 360;
   }
 
-
   SerialCom->print("Angular Velocity: ");
   SerialCom->print(angularVelocity);
   SerialCom->print(" Current Angle: ");
   SerialCom->println(currentAngle);
+
 
 }

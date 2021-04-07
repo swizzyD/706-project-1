@@ -151,6 +151,7 @@ void reverse ()
 bool ccw ()
 {
   //empty
+  return true;
 }
 
 bool cw ()
