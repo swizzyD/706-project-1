@@ -48,12 +48,6 @@ static float gyroRate = 0;             // read out value of sensor in voltage
 static float currentAngle = 0;         // current angle calculated by angular velocity integral on
 //------------------------------------------------------------------------------------------------------------------
 
-//------------------------OPEN LOOP VARIABLES-----------------------------------------------------------------------
-long forward_time = 0;
-long turn_time = 0;
-//------------------------------------------------------------------------------------------
-
-
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
@@ -180,9 +174,6 @@ STATE running() {
       movement_complete = align();
       if (movement_complete) {
         movement_state = 2;
-#if OPEN_LOOP
-        forward_time = millis();
-#endif
       }
       else if (!movement_complete) {
         movement_state = 1;
@@ -195,9 +186,6 @@ STATE running() {
 
       if (movement_complete && count != 3) {
         currentAngle = 0;
-#if OPEN_LOOP
-        turn_time = millis();
-#endif
         movement_state = 3;
       }
       else if (movement_complete && count == 3) {
@@ -213,16 +201,34 @@ STATE running() {
       update_angle();
       movement_complete = cw();
 
-      if (movement_complete && count != 3) {
-        movement_state = 1; // Change to movement_state = 1 so that the robot aligns after the turn
-
+      if(movement_complete && count == 3){
+        movement_state = 0;
+      }
+      else if (movement_complete && count %2 == 0) {
+        movement_state = 4; // short forward
+        count++;
+      }
+      else if(movement_complete && count%2 !=0){
+        movement_state = 2;
         count++;
       }
       else if (!movement_complete && count != 3) {
         movement_state = 3;
       }
 
+
     }
+
+    else if (movement_state == 4){
+      movement_complete = forward_short();
+      if(movement_complete){
+        movement_state = 3;
+      }
+      else if (!movement_complete){
+        movement_state = 4;
+      }
+    }
+    
 
   }
 
