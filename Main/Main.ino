@@ -17,6 +17,8 @@
 
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
+#define OPEN_LOOP 1
+
 #define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
 #define GYRO_READING analogRead(A3)
@@ -44,7 +46,12 @@ static float gyroSensitivity = 0.007;  // gyro sensitivity unit is (v/degree/sec
 static float rotationThreshold = 1.5;  // because of gyro drifting, defining rotation angular velocity  less than                                                        // this value will not be ignored
 static float gyroRate = 0;             // read out value of sensor in voltage
 static float currentAngle = 0;         // current angle calculated by angular velocity integral on
+//------------------------------------------------------------------------------------------------------------------
 
+//------------------------OPEN LOOP VARIABLES-----------------------------------------------------------------------
+long forward_time = 0;
+long turn_time = 0;
+//------------------------------------------------------------------------------------------
 
 
 
@@ -54,11 +61,6 @@ PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
 PID side_distance_PID(5.0f, 0.02f, 0.002f, -100, 100);
 PID side_orientation_PID(5.0f, 0.02f, 0.002f, -100, 100);
 PID ultrasonic_PID(2.0f, 0.001f, 0.0f, -300, 300);
-
-//PID gyro_PID(0.2f, 0.0f, 0.0f, -200, 200);
-//PID side_distance_PID(5.0f, 0.0f, 0.0f, -100, 100);
-//PID side_orientation_PID(5.0f, 0.0f, 0.0f, -100, 100);
-//PID ultrasonic_PID(2.0f, 0.0f, 0.0f, -200, 200);
 
 static int sideTarget = 300;
 
@@ -153,21 +155,19 @@ STATE running() {
   static int movement_state = 1;
   static bool movement_complete = false;
 
-
   fast_flash_double_LED_builtin();
 
   //-----------------MOVEMENT STATE MACHINE---------------------
   if (millis() - previous_millis_1 > SAMPLING_TIME) {
     previous_millis_1 = millis();
+
+
 #if DISPLAY_READINGS
     SerialCom ->print("movement state = ");
     SerialCom->println(movement_state);
     SerialCom->print("count = ");
     SerialCom->println(count);
 #endif
-
-
-
 
     if (movement_state == 0) {
       // STOP STATE
@@ -180,6 +180,9 @@ STATE running() {
       movement_complete = align();
       if (movement_complete) {
         movement_state = 2;
+#if OPEN_LOOP
+        forward_time = millis();
+#endif
       }
       else if (!movement_complete) {
         movement_state = 1;
@@ -192,6 +195,9 @@ STATE running() {
 
       if (movement_complete && count != 3) {
         currentAngle = 0;
+#if OPEN_LOOP
+        turn_time = millis();
+#endif
         movement_state = 3;
       }
       else if (movement_complete && count == 3) {
@@ -209,6 +215,7 @@ STATE running() {
 
       if (movement_complete && count != 3) {
         movement_state = 1; // Change to movement_state = 1 so that the robot aligns after the turn
+
         count++;
       }
       else if (!movement_complete && count != 3) {
