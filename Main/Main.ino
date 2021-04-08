@@ -180,9 +180,6 @@ STATE running() {
       movement_complete = align();
       if (movement_complete) {
         movement_state = 2;
-#if OPEN_LOOP
-        forward_time = millis();
-#endif
       }
       else if (!movement_complete) {
         movement_state = 1;
@@ -195,9 +192,6 @@ STATE running() {
 
       if (movement_complete && count != 3) {
         currentAngle = 0;
-#if OPEN_LOOP
-        turn_time = millis();
-#endif
         movement_state = 3;
       }
       else if (movement_complete && count == 3) {
@@ -212,16 +206,33 @@ STATE running() {
       // TURNING CW STATE
       update_angle();
       movement_complete = cw();
-
-      if (movement_complete && count != 3) {
-        movement_state = 1; // Change to movement_state = 1 so that the robot aligns after the turn
-
+      
+      if(movement_complete && count == 3){
+        movement_state = 0;
+      }
+      else if (movement_complete && count %2 != 0) {
+        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn
+        count++;
+      }
+      else if(movement_complete && count%2 == 0){
+        movement_state = 4;
         count++;
       }
       else if (!movement_complete && count != 3) {
         movement_state = 3;
       }
 
+    }
+
+    else if(movement_state = 4){
+      movement_complete = forward_short();
+      if(movement_complete){
+        movement_state = 3;
+        
+      }
+      else{
+        movement_state = 4;
+      }
     }
 
   }
