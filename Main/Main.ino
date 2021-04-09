@@ -17,8 +17,6 @@
 
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
-#define OPEN_LOOP 1
-
 #define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
 #define GYRO_READING analogRead(A3)
@@ -28,7 +26,6 @@
 #define GYRO_TARGET_ANGLE 270
 #define ULTRASONIC_MOVE_THRESH 100
 
-//turn count
 static int count = 0;
 
 
@@ -46,24 +43,25 @@ static float gyroSensitivity = 0.007;  // gyro sensitivity unit is (v/degree/sec
 static float rotationThreshold = 1.5;  // because of gyro drifting, defining rotation angular velocity  less than                                                        // this value will not be ignored
 static float gyroRate = 0;             // read out value of sensor in voltage
 static float currentAngle = 0;         // current angle calculated by angular velocity integral on
-//------------------------------------------------------------------------------------------------------------------
 
-//------------------------OPEN LOOP VARIABLES-----------------------------------------------------------------------
-long forward_time = 0;
-long turn_time = 0;
-//------------------------------------------------------------------------------------------
 
 
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
 PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
-PID side_distance_PID(5.0f, 0.02f, 0.002f, -100, 100);
-PID side_orientation_PID(5.0f, 0.02f, 0.002f, -100, 100);
+PID side_distance_PID(7.0f, 0.08f, 0.008f, -100, 100);
+PID side_orientation_PID(5.0f, 0.05f, 0.002f, -100, 100);
 PID ultrasonic_PID(2.0f, 0.001f, 0.0f, -300, 300);
 
-static int sideTarget = 300;
+//PID gyro_PID(0.2f, 0.0f, 0.0f, -200, 200);
+//PID side_distance_PID(5.0f, 0.0f, 0.0f, -100, 100);
+//PID side_orientation_PID(5.0f, 0.0f, 0.0f, -100, 100);
+//PID ultrasonic_PID(2.0f, 0.0f, 0.0f, -200, 200);
 
+
+static int sideTarget = 300;
+//static int ultrasonicTarget = 580; // pulse width not cm
 static double ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
 // Variable for get_ultrasonic_range()
@@ -114,7 +112,7 @@ void setup(void)
   SerialCom->println("Setup....");
   SerialCom->println("PID init....");
 
-
+  
   delay(1000); //settling time but no really needed
 }
 
@@ -139,6 +137,7 @@ void loop(void)
 //--------------- MACHINE STATES------------------------------
 
 STATE initialising() {
+  //initialising
   SerialCom->println("INITIALISING....");
   SerialCom->println("Enabling Motors...");
   enable_motors();
@@ -155,19 +154,16 @@ STATE running() {
   static int movement_state = 1;
   static bool movement_complete = false;
 
+
   fast_flash_double_LED_builtin();
 
   //-----------------MOVEMENT STATE MACHINE---------------------
   if (millis() - previous_millis_1 > SAMPLING_TIME) {
-    previous_millis_1 = millis();
-
-
-#if DISPLAY_READINGS
     SerialCom ->print("movement state = ");
     SerialCom->println(movement_state);
+    previous_millis_1 = millis();
     SerialCom->print("count = ");
     SerialCom->println(count);
-#endif
 
     if (movement_state == 0) {
       // STOP STATE
@@ -188,7 +184,7 @@ STATE running() {
 
     else if (movement_state == 2) {
       // FORWARD STATE
-      movement_complete = forward();
+      movement_complete = forward();   
 
       if (movement_complete && count != 3) {
         currentAngle = 0;
@@ -206,33 +202,15 @@ STATE running() {
       // TURNING CW STATE
       update_angle();
       movement_complete = cw();
-      
-      if(movement_complete && count == 3){
-        movement_state = 0;
-      }
-      else if (movement_complete && count %2 != 0) {
-        movement_state = 2; // Change to movement_state = 1 so that the robot aligns after the turn
-        count++;
-      }
-      else if(movement_complete && count%2 == 0){
-        movement_state = 4;
-        count++;
-      }
-      else if (!movement_complete && count != 3) {
-        movement_state = 3;
-      }
 
-    }
-
-    else if(movement_state = 4){
-      movement_complete = forward_short();
-      if(movement_complete){
-        movement_state = 3;
+        if (movement_complete && count != 3) {
+          movement_state = 1; // Change to movement_state = 1 so that the robot aligns after the turn
+          count++;
+        }
+        else if (!movement_complete && count != 3) {
+          movement_state = 3;
+        }
         
-      }
-      else{
-        movement_state = 4;
-      }
     }
 
   }
