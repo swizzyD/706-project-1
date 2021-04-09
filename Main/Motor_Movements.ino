@@ -58,7 +58,7 @@ bool align()
   right_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
   right_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
 
-  if (abs(SIDE_1_READING - SIDE_2_READING) - 10 < 10 && abs(sideTarget - SIDE_1_READING) < 5 ) {
+  if (abs(SIDE_1_READING - SIDE_2_READING) < 5 && abs(sideTarget - sideMeasurement) < 5 ) {
     return true;  // movement complete
   }
   else {
@@ -151,7 +151,6 @@ void reverse ()
 bool ccw ()
 {
   //empty
-  return true;
 }
 
 bool cw ()
