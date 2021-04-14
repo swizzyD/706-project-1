@@ -1,6 +1,6 @@
 #include"pitches.h"
 
-% TOKYOOOO DRIFFTT DU DU DU DU DUDUDU 
+// TOKYOOOO DRIFFTT DU DU DU DU DUDUDU 
 
 int melody[] = {
 
@@ -10,15 +10,24 @@ NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_AS4, 0, NOTE_AS4, 0,
 
 NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_AS4, 0, NOTE_AS4, 0,
 
+NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_F5, 0, NOTE_F5, 0,
+
+NOTE_GS5, NOTE_FS5, NOTE_F5, NOTE_DS5, 0, NOTE_DS5, 0,
+
+NOTE_GS5, NOTE_FS5, NOTE_F5, NOTE_DS5, 0, NOTE_DS5, 0, 
+
 NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_AS4, 0, NOTE_AS4, 0,
 
-NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_AS4, 0, NOTE_AS4, 0, END
+NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_AS4, 0, NOTE_AS4, 0,END
 
 };
 
 // note durations: 8 = quarter note, 4 = 8th note, etc.
 float noteDurations[] = {       //duration of the notes
 4,4,4,4,4,4,4,4,
+16/3,16/3,4,4,4,4,4,
+16/3,16/3,4,4,4,4,4,
+16/3,16/3,4,4,4,4,4,
 16/3,16/3,4,4,4,4,4,
 16/3,16/3,4,4,4,4,4,
 16/3,16/3,4,4,4,4,4,
