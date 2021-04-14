@@ -17,7 +17,7 @@
 
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
-#define DISP_READINGS 1
+#define DISP_READINGS 0
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
 #define GYRO_READING analogRead(A3)
 #define SIDE_1_READING analogRead(A4)
@@ -50,14 +50,20 @@ static float currentAngle = 0;         // current angle calculated by angular ve
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
 PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
-PID side_distance_PID(7.0f, 0.08f, 0.008f, -100, 100);
+PID side_distance_PID(7.0f, 0.05f, 0.05f, -100, 100);
 PID side_orientation_PID(5.0f, 0.05f, 0.002f, -100, 100);
-PID ultrasonic_PID(2.0f, 0.001f, 0.0f, -300, 300);
+PID ultrasonic_PID(2.0f, 0.001df, 0.0f, -400, 400);
 
 //PID gyro_PID(0.2f, 0.0f, 0.0f, -200, 200);
 //PID side_distance_PID(5.0f, 0.0f, 0.0f, -100, 100);
 //PID side_orientation_PID(5.0f, 0.0f, 0.0f, -100, 100);
 //PID ultrasonic_PID(2.0f, 0.0f, 0.0f, -200, 200);
+
+//PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
+//PID side_distance_PID(7.0f, 0.025f, 0.008f, -100, 100);
+//PID side_orientation_PID(5.0f, 0.05f, 0.002f, -100, 100);
+//PID ultrasonic_PID(2.0f, 0.001f, 0.0f, -300, 300);
+
 
 
 static int sideTarget = 300;
@@ -159,11 +165,11 @@ STATE running() {
 
   //-----------------MOVEMENT STATE MACHINE---------------------
   if (millis() - previous_millis_1 > SAMPLING_TIME) {
-    SerialCom ->print("movement state = ");
-    SerialCom->println(movement_state);
+//    SerialCom ->print("movement state = ");
+//    SerialCom->println(movement_state);
+//    SerialCom->print("count = ");
+//    SerialCom->println(count);
     previous_millis_1 = millis();
-    SerialCom->print("count = ");
-    SerialCom->println(count);
 
     if (movement_state == 0) {
       // STOP STATE
@@ -253,10 +259,14 @@ STATE stopped() {
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
 
-    update_angle();
+    
     side_reading();
-    ultrasonic_reading();
 
+
+#if DISP_READINGS    
+    update_angle();
+    ultrasonic_reading();
+#endif
 
 #ifndef NO_BATTERY_V_OK
     //500ms timed if statement to check lipo and output speed settings

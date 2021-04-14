@@ -51,6 +51,7 @@ bool align()
   SerialCom->println(side_orientation_correction);
   SerialCom->print("side_distance_correction = ");
   SerialCom->println(side_distance_correction);
+  
 #endif
 
   left_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
@@ -58,7 +59,7 @@ bool align()
   right_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
   right_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
 
-  if (abs(SIDE_1_READING - SIDE_2_READING) < 5 && abs(sideTarget - sideMeasurement) < 5 ) {
+  if (abs(SIDE_1_READING - SIDE_2_READING) < 10 && abs(sideTarget - sideMeasurement) < 10 ) {
     return true;  // movement complete
   }
   else {
@@ -105,7 +106,7 @@ bool forward()
   right_rear_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction + side_distance_correction);
   right_font_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction - side_distance_correction);
 
-  if (abs(SIDE_1_READING - SIDE_2_READING) < 10 && abs(sideTarget - SIDE_1_READING) < 5 && abs(ultrasonicTarget - ultrasonicReading) < 5) {
+  if (abs(SIDE_1_READING - SIDE_2_READING) < 10 && abs(sideTarget - SIDE_1_READING) < 10 && abs(ultrasonicTarget - ultrasonicReading) < 10) {
     return true;  // movement complete
   }
   else {
