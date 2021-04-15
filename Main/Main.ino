@@ -17,13 +17,13 @@
 
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
-#define DISP_READINGS 0
+#define DISP_READINGS 1
 #define SAMPLING_TIME 20 //ms , operate at 50Hz
 #define GYRO_READING analogRead(A3)
 #define SIDE_1_READING analogRead(A4)
 #define SIDE_2_READING analogRead(A6)
 
-#define GYRO_TARGET_ANGLE 270
+#define GYRO_TARGET_ANGLE 295
 #define ULTRASONIC_MOVE_THRESH 100
 
 static int count = 0;
@@ -49,10 +49,10 @@ static float currentAngle = 0;         // current angle calculated by angular ve
 
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
-PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
-PID side_distance_PID(7.0f, 0.05f, 0.05f, -100, 100);
-PID side_orientation_PID(5.0f, 0.05f, 0.002f, -100, 100);
-PID ultrasonic_PID(2.0f, 0.001df, 0.0f, -400, 400);
+PID gyro_PID(0.25f, 0.0f, 0.1f, -200, 200);
+PID side_distance_PID(5.0f, 0.0005f, 4.0f, -100, 100);
+PID side_orientation_PID(5.0f, 0.0005f, 4.0f, -100, 100);
+PID ultrasonic_PID(5.0f, 0.0f, 0.5f, -400, 400);
 
 //PID gyro_PID(0.2f, 0.0f, 0.0f, -200, 200);
 //PID side_distance_PID(5.0f, 0.0f, 0.0f, -100, 100);
@@ -63,6 +63,11 @@ PID ultrasonic_PID(2.0f, 0.001df, 0.0f, -400, 400);
 //PID side_distance_PID(7.0f, 0.025f, 0.008f, -100, 100);
 //PID side_orientation_PID(5.0f, 0.05f, 0.002f, -100, 100);
 //PID ultrasonic_PID(2.0f, 0.001f, 0.0f, -300, 300);
+
+//PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
+//PID side_distance_PID(7.0f, 0.05f, 0.05f, -100, 100);
+//PID side_orientation_PID(5.0f, 0.05f, 0.002f, -100, 100);
+//PID ultrasonic_PID(2.0f, 0.001df, 0.0f, -400, 400);
 
 
 
@@ -255,7 +260,7 @@ STATE stopped() {
   disable_motors();
   slow_flash_LED_builtin();
 
-  if (millis() - previous_millis > 500) { //print massage every 500ms
+  if (millis() - previous_millis > SAMPLING_TIME) { //print massage every 500ms
     previous_millis = millis();
     SerialCom->println("STOPPED---------");
 
