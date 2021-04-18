@@ -50,9 +50,9 @@ static float currentAngle = 0;         // current angle calculated by angular ve
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
 PID gyro_PID(0.25f, 0.0f, 0.1f, -200, 200);
-PID side_distance_PID(5.0f, 0.0005f, 4.0f, -100, 100);
-PID side_orientation_PID(5.0f, 0.0005f, 4.0f, -100, 100);
-PID ultrasonic_PID(5.0f, 0.0f, 0.5f, -400, 400);
+PID side_distance_PID(5.0f, 0.0005f, 4.0f, -125, 125);
+PID side_orientation_PID(5.0f, 0.0005f, 4.0f, -75, 75);
+PID ultrasonic_PID(5.0f, 0.0f, 0.5f, -300, 300);
 
 //PID gyro_PID(0.2f, 0.0f, 0.0f, -200, 200);
 //PID side_distance_PID(5.0f, 0.0f, 0.0f, -100, 100);
