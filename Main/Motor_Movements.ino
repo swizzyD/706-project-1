@@ -35,10 +35,10 @@ bool align()
   //moves side closest to wall outwards to prevent collision
   int sideMeasurement;
   if(SIDE_1_READING > SIDE_2_READING){
-    sideMeasurement = SIDE_1_READING;
+    sideMeasurement = SIDE_2_READING;
   }
   else{
-    sideMeasurement = SIDE_2_READING;
+    sideMeasurement = SIDE_1_READING;
   }
 
   //sideMeasurement = (SIDE_1_READING + SIDE_2_READING)/2;
@@ -75,10 +75,10 @@ bool forward()
   //moves side closest to wall outwards to prevent collision
   int sideMeasurement;
   if(SIDE_1_READING > SIDE_2_READING){
-    sideMeasurement = SIDE_1_READING;
+    sideMeasurement = SIDE_2_READING;
   }
   else{
-    sideMeasurement = SIDE_2_READING;
+    sideMeasurement = SIDE_1_READING;
   }
 
  int ultrasonicReading = get_ultrasonic_range();

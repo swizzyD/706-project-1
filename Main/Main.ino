@@ -71,7 +71,7 @@ PID ultrasonic_PID(5.0f, 0.0f, 0.5f, -300, 300);
 
 
 
-static int sideTarget = 300;
+static int sideTarget = 291; //300
 //static int ultrasonicTarget = 580; // pulse width not cm
 static double ultrasonicTarget = 90; //150 - (235/2.0) - 15;//in mm (235/2) is half of robot length, 15 is length of ultrasonic sensor NEEDS TO CHANGE AFTER ULTRASONIC SENSOR MOUNTING
 
