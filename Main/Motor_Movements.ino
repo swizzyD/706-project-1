@@ -60,7 +60,7 @@ bool align()
   right_rear_motor.writeMicroseconds(1500 - side_orientation_correction + side_distance_correction);
   right_font_motor.writeMicroseconds(1500 - side_orientation_correction - side_distance_correction);
 
-  if (abs(SIDE_1_READING - SIDE_2_READING) < 3 && abs(sideTarget - sideMeasurement) < 3 ) {
+  if (abs(SIDE_1_READING - SIDE_2_READING) < 10 && abs(sideTarget - sideMeasurement) < 3 ) {
     return true;  // movement complete
   }
   else {
@@ -107,7 +107,7 @@ bool forward()
   right_rear_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction + side_distance_correction);
   right_font_motor.writeMicroseconds(1500 + speed_val - side_orientation_correction - side_distance_correction);
 
-  if (abs(SIDE_1_READING - SIDE_2_READING) < 5 && abs(sideTarget - SIDE_1_READING) < 5 && abs(ultrasonicTarget - ultrasonicReading) < 5) {
+  if (abs(ultrasonicTarget - ultrasonicReading) < 5) {
     return true;  // movement complete
   }
   else {
