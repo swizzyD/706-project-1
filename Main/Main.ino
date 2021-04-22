@@ -50,24 +50,29 @@ static float currentAngle = 0;         // current angle calculated by angular ve
 //-------------------------------PID OBJECTS-----// Kp, Ki, Kd, limMin, limMax
 
 PID gyro_PID(0.25f, 0.0f, 0.1f, -200, 200);
-PID side_distance_PID(5.0f, 0.0005f, 4.0f, -125, 125);
-PID side_orientation_PID(5.0f, 0.0005f, 4.0f, -75, 75);
-PID ultrasonic_PID(5.0f, 0.0f, 0.5f, -300, 300);
+PID side_distance_PID(3.0f, 0.0f, 1.0f, -125, 125);
+PID side_orientation_PID(3.0f, 0.0f, 1.0f, -75, 75);
+PID align_side_distance_PID(5.0f, 0.0001f, 50.0f, -250, 250);
+PID align_side_orientation_PID(5.0f, 0.0005f, 50.0f, -150, 150);
+PID ultrasonic_PID(5.0f, 0.0f, 0.0f, -300, 300);
+
+//PID gyro_PID(0.25f, 0.0f, 0.1f, -200, 200);
+//PID side_distance_PID(3.0f, 0.0f, 1.0f, -125, 125);
+//PID side_orientation_PID(3.0f, 0.0f, 1.0f, -75, 75);
+//PID align_side_distance_PID(5.0f, 0.0001f, 50.0f, -250, 250);
+//PID align_side_orientation_PID(5.0f, 0.0005f, 50.0f, -150, 150);
+//PID ultrasonic_PID(5.0f, 0.0f, 0.0f, -300, 300);
+
+//PID gyro_PID(0.25f, 0.0f, 0.1f, -200, 200);
+//PID side_distance_PID(5.0f, 0.0005f, 4.0f, -125, 125);
+//PID side_orientation_PID(5.0f, 0.0005f, 4.0f, -75, 75);
+//PID ultrasonic_PID(5.0f, 0.0f, 0.5f, -300, 300);
 
 //PID gyro_PID(0.2f, 0.0f, 0.0f, -200, 200);
 //PID side_distance_PID(5.0f, 0.0f, 0.0f, -100, 100);
 //PID side_orientation_PID(5.0f, 0.0f, 0.0f, -100, 100);
 //PID ultrasonic_PID(2.0f, 0.0f, 0.0f, -200, 200);
 
-//PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
-//PID side_distance_PID(7.0f, 0.025f, 0.008f, -100, 100);
-//PID side_orientation_PID(5.0f, 0.05f, 0.002f, -100, 100);
-//PID ultrasonic_PID(2.0f, 0.001f, 0.0f, -300, 300);
-
-//PID gyro_PID(0.2f, 0.01f, 0.0f, -200, 200);
-//PID side_distance_PID(7.0f, 0.05f, 0.05f, -100, 100);
-//PID side_orientation_PID(5.0f, 0.05f, 0.002f, -100, 100);
-//PID ultrasonic_PID(2.0f, 0.001df, 0.0f, -400, 400);
 
 
 
